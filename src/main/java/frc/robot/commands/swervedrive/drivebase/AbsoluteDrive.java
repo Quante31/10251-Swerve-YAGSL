@@ -4,7 +4,6 @@
 
 package frc.robot.commands.swervedrive.drivebase;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,6 +14,8 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import swervelib.SwerveController;
 import swervelib.math.SwerveMath;
+import frc.robot.util.DriveInputSmoother;
+import frc.robot.util.ManualDriveInput;
 
 /**
  * An example command that uses an example subsystem.
@@ -23,8 +24,10 @@ public class AbsoluteDrive extends Command
 {
 
   private final SwerveSubsystem swerve;
+  private final DriveInputSmoother inputSmoother;
   private final DoubleSupplier  vX, vY;
   private final DoubleSupplier headingHorizontal, headingVertical;
+  private final DoubleSupplier rotationInput;
   private boolean initRotation = false;
 
   /**
@@ -55,6 +58,10 @@ public class AbsoluteDrive extends Command
     this.vY = vY;
     this.headingHorizontal = headingHorizontal;
     this.headingVertical = headingVertical;
+    this.rotationInput = () -> (headingHorizontal.getAsDouble() == 0 && headingVertical.getAsDouble() == 0 && initRotation) 
+                                ? swerve.getHeading().getRadians() 
+                                : Math.atan2(headingHorizontal.getAsDouble(), headingVertical.getAsDouble());
+    this.inputSmoother = new DriveInputSmoother(vX, vY, rotationInput);
 
     addRequirements(swerve);
   }
@@ -69,14 +76,15 @@ public class AbsoluteDrive extends Command
   @Override
   public void execute()
   {
-
+    final ManualDriveInput input = inputSmoother.getSmoothedInput();
     // Get the desired chassis speeds based on a 2 joystick module.
-    ChassisSpeeds desiredSpeeds = swerve.getTargetSpeeds(vX.getAsDouble(), vY.getAsDouble(),
-                                                         headingHorizontal.getAsDouble(),
-                                                         headingVertical.getAsDouble());
+    
+    ChassisSpeeds desiredSpeeds = swerve.getTargetSpeeds(input.forward, input.left,
+                                                         Math.sin(input.rotation),
+                                                         Math.cos(input.rotation));
 
     // Prevent Movement After Auto
-    if (initRotation)
+    /*if (initRotation)
     {
       if (headingHorizontal.getAsDouble() == 0 && headingVertical.getAsDouble() == 0)
       {
@@ -88,7 +96,7 @@ public class AbsoluteDrive extends Command
       }
       //Dont Init Rotation Again
       initRotation = false;
-    }
+    }*/
 
     // Limit velocity to prevent tippy
     Translation2d translation = SwerveController.getTranslation2d(desiredSpeeds);

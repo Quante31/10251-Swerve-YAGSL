@@ -4,36 +4,34 @@ import static edu.wpi.first.units.Units.Degrees;
 
 import java.util.function.DoubleSupplier;
 
-import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
-import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
-
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-//import frc.robot.Constants.Driving;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.Landmarks;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
-//import frc.util.DriveInputSmoother;
 import frc.robot.util.GeometryUtil;
-//import frc.util.ManualDriveInput;
+import frc.robot.util.DriveInputSmoother;
+import frc.robot.util.ManualDriveInput;
 
 public class AimAndDriveCommand extends Command {
     private static final Angle kAimTolerance = Degrees.of(5);
 
     private final SwerveSubsystem swerve;
-    /*private final DriveInputSmoother inputSmoother;*/
+    private final DriveInputSmoother inputSmoother;
 
-   /*private final SwerveRequest.FieldCentricFacingAngle fieldCentricFacingAngleRequest = new SwerveRequest.FieldCentricFacingAngle()
-        .withRotationalDeadband(Driving.kPIDRotationDeadband)
-        .withMaxAbsRotationalRate(Driving.kMaxRotationalRate)
-        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-        .withSteerRequestType(SteerRequestType.MotionMagicExpo)
-        .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
-        .withHeadingPID(5, 0, 0);*/
+    // Basic slew limiters to smooth joystick inputs (adjust rates as needed)
+    private final SlewRateLimiter forwardLimiter = new SlewRateLimiter(3.0); // m/s per sec (example)
+    private final SlewRateLimiter leftLimiter = new SlewRateLimiter(3.0);
+
+    // Replace with your robot max speed constant or expose from SwerveSubsystem
+    private static final double kMaxSpeedMetersPerSecond = 3.0;
+
+    // last computed target direction (operator perspective)
+    private Rotation2d targetDirection = new Rotation2d();
 
     public AimAndDriveCommand(
         SwerveSubsystem swerve,
@@ -41,27 +39,26 @@ public class AimAndDriveCommand extends Command {
         DoubleSupplier leftInput
     ) {
         this.swerve = swerve;
-        /*this.inputSmoother = new DriveInputSmoother(forwardInput, leftInput);
-        addRequirements(swerve);*/
+        this.inputSmoother = new DriveInputSmoother(forwardInput, leftInput);
+        addRequirements(swerve);
     }
 
     public AimAndDriveCommand(SwerveSubsystem swerve) {
-        this(swerve, () -> 0, () -> 0);
+        this(swerve, () -> 0.0, () -> 0.0);
     }
-    public Rotation2d getOperatorForwardDirection(){
-        if (swerve.isRedAlliance()){
-            return new Rotation2d(180);
-        }
-        return new Rotation2d(0);
-    }
-    public boolean isAimed() {
-        //final Rotation2d targetHeading = fieldCentricFacingAngleRequest.TargetDirection;
-        final Rotation2d currentHeadingInBlueAlliancePerspective = swerve.getPose().getRotation();
 
+    private Rotation2d getOperatorForwardDirection() {
+        // Use the DriverStation alliance to decide operator forward. Rotation2d expects radians.
+        if (DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
+            return Rotation2d.fromDegrees(180.0);
+        }
+        return Rotation2d.fromDegrees(0.0);
+    }
+
+    public boolean isAimed() {
+        final Rotation2d currentHeadingInBlueAlliancePerspective = swerve.getPose().getRotation();
         final Rotation2d currentHeadingInOperatorPerspective = currentHeadingInBlueAlliancePerspective.rotateBy(getOperatorForwardDirection());
-        //return GeometryUtil.isNear(targetHeading, currentHeadingInOperatorPerspective, kAimTolerance);
-        // TODO: Figure out TargetDirection
-        return false;
+        return GeometryUtil.isNear(targetDirection, currentHeadingInOperatorPerspective, kAimTolerance);
     }
 
     private Rotation2d getDirectionToHub() {
@@ -72,17 +69,25 @@ public class AimAndDriveCommand extends Command {
         return hubDirectionInOperatorPerspective;
     }
 
+   // ...existing code...
     @Override
     public void execute() {
-        /*final ManualDriveInput input = inputSmoother.getSmoothedInput();
-        swerve.setControl(
-            fieldCentricFacingAngleRequest
-                .withVelocityX(Driving.kMaxSpeed.times(input.forward))
-                .withVelocityY(Driving.kMaxSpeed.times(input.left))
-                .withTargetDirection(getDirectionToHub())
-        );*/
-    }
+        final ManualDriveInput input = inputSmoother.getSmoothedInput();
 
+        // compute hub direction in field (blue-alliance) frame
+        final Translation2d hubPosition = Landmarks.hubPosition();
+        final Translation2d robotPosition = swerve.getPose().getTranslation();
+        final Rotation2d hubDirectionInBlueAlliancePerspective = hubPosition.minus(robotPosition).getAngle();
+
+        // get chassis speeds from SwerveSubsystem helper (expects joystick-scale inputs and field angle)
+        // NOTE: do NOT scale inputs by max speed here — the helper uses Constants.MAX_SPEED internally
+        final var speeds = swerve.getTargetSpeeds(input.forward, input.left, hubDirectionInBlueAlliancePerspective);
+
+        // send speeds to whichever method in your SwerveSubsystem applies ChassisSpeeds/module states
+        // replace with your actual drive method name if different
+        swerve.setChassisSpeeds(speeds);
+    }
+// ...existing code...
     @Override
     public boolean isFinished() {
         return false;
