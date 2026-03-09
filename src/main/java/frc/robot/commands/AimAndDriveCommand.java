@@ -31,15 +31,12 @@ public class AimAndDriveCommand extends Command {
     private static final double kMaxSpeedMetersPerSecond = 3.0;
 
     // last computed target direction (operator perspective)
-    private Rotation2d targetDirection = new Rotation2d();
+    private Rotation2d targetDirection;
 
-    public AimAndDriveCommand(
-        SwerveSubsystem swerve,
-        DoubleSupplier forwardInput,
-        DoubleSupplier leftInput
-    ) {
+    public AimAndDriveCommand(SwerveSubsystem swerve, DoubleSupplier forwardInput, DoubleSupplier leftInput) {
         this.swerve = swerve;
         this.inputSmoother = new DriveInputSmoother(forwardInput, leftInput);
+        this.targetDirection = getDirectionToHub();
         addRequirements(swerve);
     }
 
@@ -48,8 +45,7 @@ public class AimAndDriveCommand extends Command {
     }
 
     private Rotation2d getOperatorForwardDirection() {
-        // Use the DriverStation alliance to decide operator forward. Rotation2d expects radians.
-        if (DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
+        if (DriverStation.getAlliance().orElse(null).equals(DriverStation.Alliance.Red)) {
             return Rotation2d.fromDegrees(180.0);
         }
         return Rotation2d.fromDegrees(0.0);
@@ -75,13 +71,13 @@ public class AimAndDriveCommand extends Command {
         final ManualDriveInput input = inputSmoother.getSmoothedInput();
 
         // compute hub direction in field (blue-alliance) frame
-        final Translation2d hubPosition = Landmarks.hubPosition();
+        /*inal Translation2d hubPosition = Landmarks.hubPosition();
         final Translation2d robotPosition = swerve.getPose().getTranslation();
-        final Rotation2d hubDirectionInBlueAlliancePerspective = hubPosition.minus(robotPosition).getAngle();
+        final Rotation2d hubDirectionInBlueAlliancePerspective = hubPosition.minus(robotPosition).getAngle();*/
 
         // get chassis speeds from SwerveSubsystem helper (expects joystick-scale inputs and field angle)
         // NOTE: do NOT scale inputs by max speed here — the helper uses Constants.MAX_SPEED internally
-        final var speeds = swerve.getTargetSpeeds(input.forward, input.left, hubDirectionInBlueAlliancePerspective);
+        final ChassisSpeeds speeds = swerve.getTargetSpeeds(input.forward, input.left, /*hubDirectionInBlueAlliancePerspective*/getDirectionToHub());
 
         // send speeds to whichever method in your SwerveSubsystem applies ChassisSpeeds/module states
         // replace with your actual drive method name if different
