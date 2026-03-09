@@ -48,4 +48,20 @@ public final class Constants
     public static final double RIGHT_X_DEADBAND = 0.1;
     public static final double TURN_CONSTANT    = 6;
   }
+
+  // constants for intake subsystem
+  public static final class IntakeConstants {
+    // PWM port for the intake motor controller (e.g. Spark, Victor). Update to your actual PWM port.
+    public static final int INTAKE_MOTOR_PWM_PORT = 0;
+
+    // PCM (CTRE) CAN ID where solenoid is attached
+    public static final int PCM_CAN_ID = 0;
+
+    // Double solenoid channels (forward/reverse) on the PCM
+    public static final int SOLENOID_FORWARD_CHANNEL = 0;
+    public static final int SOLENOID_REVERSE_CHANNEL = 1;
+
+    // Default intake motor speed for simple commands
+    public static final double INTAKE_DEFAULT_SPEED = 0.6;
+  }
 }
