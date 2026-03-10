@@ -51,15 +51,16 @@ public final class Constants
 
   // constants for intake subsystem
   public static final class IntakeConstants {
-    // PWM port for the intake motor controller (e.g. Spark, Victor). Update to your actual PWM port.
-    public static final int INTAKE_MOTOR_PWM_PORT = 0;
+    // PWM port for the intake motor controller (PWMSparkMax). Update to your actual PWM port.
+    public static final int INTAKE_MOTOR_PWM_PORT = 12;
 
-    // PCM (CTRE) CAN ID where solenoid is attached
-    public static final int PCM_CAN_ID = 0;
+    // Extension/retraction speeds (positive for extend, negative for retract depending on wiring)
+    public static final double EXTEND_SPEED = 0.6;
+    public static final double RETRACT_SPEED = -0.6;
 
-    // Double solenoid channels (forward/reverse) on the PCM
-    public static final int SOLENOID_FORWARD_CHANNEL = 0;
-    public static final int SOLENOID_REVERSE_CHANNEL = 1;
+    // Optional digital input ports for limit switches. Set to -1 if not present.
+    public static final int EXTENDED_LIMIT_SWITCH_PORT = -1;
+    public static final int RETRACTED_LIMIT_SWITCH_PORT = -1;
 
     // Default intake motor speed for simple commands
     public static final double INTAKE_DEFAULT_SPEED = 0.6;

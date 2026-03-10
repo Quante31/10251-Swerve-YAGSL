@@ -164,6 +164,9 @@ public class RobotContainer
   driverXbox.leftBumper().onTrue(Commands.none());
   // Toggle intake extension when right bumper is pressed
   driverXbox.rightBumper().onTrue(Commands.runOnce(intake::toggle, intake));
+  // Run intake while right trigger is held; stop when released
+  driverXbox.rightTrigger().whileTrue(
+      Commands.runEnd(() -> intake.setIntake(Constants.IntakeConstants.INTAKE_DEFAULT_SPEED), intake::stop, intake));
     } else
     {
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
@@ -172,6 +175,9 @@ public class RobotContainer
   driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
   // Toggle intake extension when right bumper is pressed
   driverXbox.rightBumper().onTrue(Commands.runOnce(intake::toggle, intake));
+  // Run intake while right trigger is held; stop when released
+  driverXbox.rightTrigger().whileTrue(
+      Commands.runEnd(() -> intake.setIntake(Constants.IntakeConstants.INTAKE_DEFAULT_SPEED), intake::stop, intake));
     }
 
   }

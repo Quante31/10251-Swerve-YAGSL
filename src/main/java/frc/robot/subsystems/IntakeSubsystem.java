@@ -1,75 +1,83 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 /**
- * Subsystem that controls the intake mechanism: a motor to pull balls in and a solenoid to extend/retract
- * the intake arm.
- *
- * Notes: The PWM port and PCM channel numbers are defined in {@link Constants.IntakeConstants} and are
- * assumed values for now — update them to match your robot wiring.
+ * Intake subsystem using a single NEO driven through a PWM Spark Max (PWMSparkMax).
+ * Provides open-loop control for the roller motor and simple command factories.
  */
 public class IntakeSubsystem extends SubsystemBase {
-        private final PWMSparkMax intakeMotor;
-    private final DoubleSolenoid intakeSolenoid;
+    public enum Speed {
+        STOP(0.0),
+        INTAKE(0.8);
+
+        private final double percentOutput;
+
+        private Speed(double percentOutput) {
+            this.percentOutput = percentOutput;
+        }
+
+        public double percent() {
+            return percentOutput;
+        }
+    }
+
+    private final PWMSparkMax intakeMotor;
 
     public IntakeSubsystem() {
-        // Motor (PWM) and solenoid initialized from Constants. Update ports as needed.
         intakeMotor = new PWMSparkMax(Constants.IntakeConstants.INTAKE_MOTOR_PWM_PORT);
-        intakeSolenoid = new DoubleSolenoid(Constants.IntakeConstants.PCM_CAN_ID,
-            PneumaticsModuleType.CTREPCM,
-            Constants.IntakeConstants.SOLENOID_FORWARD_CHANNEL,
-            Constants.IntakeConstants.SOLENOID_REVERSE_CHANNEL);
+        SmartDashboard.putData(this);
     }
 
-    /** Extend/deploy the intake */
+    /** Run the roller at a given percent (-1..1) */
+    public void setIntake(double speed) {
+        intakeMotor.set(speed);
+    }
+
+    /** Run using preset Speed enum */
+    public void set(Speed speed) {
+        setIntake(speed.percent());
+    }
+
+    /** Start the intake (convenience for commands that expect an extend() method) */
     public void extend() {
-        intakeSolenoid.set(DoubleSolenoid.Value.kForward);
+        set(Speed.INTAKE);
     }
 
-    /** Retract the intake */
-    public void retract() {
-        intakeSolenoid.set(DoubleSolenoid.Value.kReverse);
-    }
-
-    /** Toggle the intake extension state */
+    /** Toggle the intake roller: if running stop, otherwise start at INTAKE speed */
     public void toggle() {
-        if (isExtended()) {
-            retract();
+        if (Math.abs(intakeMotor.get()) > 1e-6) {
+            stop();
         } else {
             extend();
         }
     }
 
-    /** Returns true if intake is extended (forward) */
-    public boolean isExtended() {
-        return intakeSolenoid.get() == DoubleSolenoid.Value.kForward;
-    }
-
-    /** Run the intake motor at given speed (-1..1) */
-    public void setIntake(double speed) {
-        intakeMotor.set(speed);
-    }
-
-    /** Stop the intake motor */
+    /** Stop the roller */
     public void stop() {
-        intakeMotor.set(0.0);
+        intakeMotor.set(0);
     }
 
-    /**
-     * Small convenience command to agitate the intake (run it briefly). Returns a RunCommand with a short
-     * timeout; caller can modify or wrap it as needed.
-     */
+    /** Command that runs intake while active, stops on end */
+    public Command intakeCommand() {
+        return Commands.startEnd(() -> set(Speed.INTAKE), this::stop, this);
+    }
+
+    /** Simple agitate: spin for a short burst */
     public Command agitateCommand() {
-        return new RunCommand(() -> setIntake(Constants.IntakeConstants.INTAKE_DEFAULT_SPEED), this)
-                .withTimeout(0.5)
-                .andThen(() -> stop());
+        return Commands.sequence(Commands.runOnce(() -> setIntake(Speed.INTAKE.percent())), Commands.waitSeconds(0.5), Commands.runOnce(this::stop));
     }
 
+    @Override
+    public void initSendable(SendableBuilder builder) {
+        builder.addStringProperty("Command", () -> getCurrentCommand() != null ? getCurrentCommand().getName() : "null", null);
+        builder.addDoubleProperty("Output", () -> intakeMotor.get(), null);
+    }
 }
+ 
