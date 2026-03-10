@@ -6,7 +6,9 @@ package frc.robot;
 
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.AngularVelocity;
 import swervelib.math.Matter;
+import static edu.wpi.first.units.Units.RPM;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean constants. This
@@ -48,4 +50,7 @@ public final class Constants
     public static final double RIGHT_X_DEADBAND = 0.1;
     public static final double TURN_CONSTANT    = 6;
   }
+   public static class NeoV1 {
+        public static final AngularVelocity kFreeSpeed = RPM.of(5676);
+    }
 }
