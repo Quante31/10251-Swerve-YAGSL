@@ -51,8 +51,10 @@ public final class Constants
 
   // constants for intake subsystem
   public static final class IntakeConstants {
-    // PWM port for the intake motor controller (PWMSparkMax). Update to your actual PWM port.
-    public static final int INTAKE_MOTOR_PWM_PORT = 12;
+    // PWM ports for the intake: separate roller and pivot (tilt/pivot) motors driven by PWMSparkMax.
+    // Update these to your actual PWM ports on the RoboRIO PWM header.
+    public static final int ROLLER_MOTOR_PWM_PORT = 12;
+    public static final int PIVOT_MOTOR_PWM_PORT = 13;
 
     // Extension/retraction speeds (positive for extend, negative for retract depending on wiring)
     public static final double EXTEND_SPEED = 0.6;
@@ -62,7 +64,7 @@ public final class Constants
     public static final int EXTENDED_LIMIT_SWITCH_PORT = -1;
     public static final int RETRACTED_LIMIT_SWITCH_PORT = -1;
 
-    // Default intake motor speed for simple commands
+    // Default intake (roller) motor speed for simple commands
     public static final double INTAKE_DEFAULT_SPEED = 0.6;
   }
 }

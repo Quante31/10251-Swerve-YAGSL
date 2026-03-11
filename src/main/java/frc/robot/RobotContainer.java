@@ -176,7 +176,7 @@ public class RobotContainer
   // Toggle intake extension when right bumper is pressed
   driverXbox.rightBumper().onTrue(Commands.runOnce(intake::toggle, intake));
   // Run intake while right trigger is held; stop when released
-  driverXbox.rightTrigger().whileTrue(
+  driverXbox.leftTrigger().whileTrue(
       Commands.runEnd(() -> intake.setIntake(Constants.IntakeConstants.INTAKE_DEFAULT_SPEED), intake::stop, intake));
     }
 

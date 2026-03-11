@@ -28,16 +28,24 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
 
-    private final PWMSparkMax intakeMotor;
+    private final PWMSparkMax rollerMotor;
+    private final PWMSparkMax pivotMotor;
 
     public IntakeSubsystem() {
-        intakeMotor = new PWMSparkMax(Constants.IntakeConstants.INTAKE_MOTOR_PWM_PORT);
+        rollerMotor = new PWMSparkMax(Constants.IntakeConstants.ROLLER_MOTOR_PWM_PORT);
+        pivotMotor = new PWMSparkMax(Constants.IntakeConstants.PIVOT_MOTOR_PWM_PORT);
         SmartDashboard.putData(this);
     }
 
     /** Run the roller at a given percent (-1..1) */
+    /** Backwards-compatible name used in RobotContainer: sets the roller output. */
     public void setIntake(double speed) {
-        intakeMotor.set(speed);
+        setRoller(speed);
+    }
+
+    /** Run the roller at a given percent (-1..1) */
+    public void setRoller(double speed) {
+        rollerMotor.set(speed);
     }
 
     /** Run using preset Speed enum */
@@ -46,22 +54,38 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     /** Start the intake (convenience for commands that expect an extend() method) */
+    /** Extend the intake pivot (open-loop). This sets the pivot motor to EXTEND_SPEED.
+     *  This method is intentionally simple — stopPivot() or retract() must be called to stop/retract.
+     */
     public void extend() {
-        set(Speed.INTAKE);
+        pivotMotor.set(Constants.IntakeConstants.EXTEND_SPEED);
+    }
+
+    /** Retract the intake pivot (open-loop). */
+    public void retract() {
+        pivotMotor.set(Constants.IntakeConstants.RETRACT_SPEED);
+    }
+
+    /** Stop pivot motor movement */
+    public void stopPivot() {
+        pivotMotor.set(0);
     }
 
     /** Toggle the intake roller: if running stop, otherwise start at INTAKE speed */
+    /** Toggle the roller motor: if running stop, otherwise start at INTAKE speed */
     public void toggle() {
-        if (Math.abs(intakeMotor.get()) > 1e-6) {
+        if (Math.abs(rollerMotor.get()) > 1e-6) {
             stop();
         } else {
-            extend();
+            set(Speed.INTAKE);
         }
     }
 
     /** Stop the roller */
+    /** Stop both roller and pivot motors */
     public void stop() {
-        intakeMotor.set(0);
+        rollerMotor.set(0);
+        pivotMotor.set(0);
     }
 
     /** Command that runs intake while active, stops on end */
@@ -77,7 +101,8 @@ public class IntakeSubsystem extends SubsystemBase {
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addStringProperty("Command", () -> getCurrentCommand() != null ? getCurrentCommand().getName() : "null", null);
-        builder.addDoubleProperty("Output", () -> intakeMotor.get(), null);
+        builder.addDoubleProperty("Roller Output", () -> rollerMotor.get(), null);
+        builder.addDoubleProperty("Pivot Output", () -> pivotMotor.get(), null);
     }
 }
  
