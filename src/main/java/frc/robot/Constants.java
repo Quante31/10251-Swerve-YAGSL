@@ -51,10 +51,10 @@ public final class Constants
 
   // constants for intake subsystem
   public static final class IntakeConstants {
-    // PWM ports for the intake: separate roller and pivot (tilt/pivot) motors driven by PWMSparkMax.
-    // Update these to your actual PWM ports on the RoboRIO PWM header.
-    public static final int ROLLER_MOTOR_PWM_PORT = 12;
-    public static final int PIVOT_MOTOR_PWM_PORT = 13;
+  // CAN IDs for Spark MAX controllers if using CANSparkMax instead of PWMSparkMax.
+  // Set these to the CAN IDs programmed into your motor controllers.
+  public static final int ROLLER_MOTOR_CAN_ID = 12;
+  public static final int PIVOT_MOTOR_CAN_ID = 13;
 
     // Extension/retraction speeds (positive for extend, negative for retract depending on wiring)
     public static final double EXTEND_SPEED = 0.6;
