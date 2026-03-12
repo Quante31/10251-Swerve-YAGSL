@@ -9,9 +9,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-/**
- * Intake subsystem using a single NEO driven through a PWM Spark Max (PWMSparkMax).
- * Provides open-loop control for the roller motor and simple command factories.
+/*
+ * intake mechanism, consisting of a roller motor and a pivot motor.
  */
 public class IntakeSubsystem extends SubsystemBase {
     public enum Speed {
