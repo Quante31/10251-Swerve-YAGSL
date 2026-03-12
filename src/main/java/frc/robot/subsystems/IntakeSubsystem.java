@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -28,12 +29,12 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
 
-    private final PWMSparkMax rollerMotor;
-    private final PWMSparkMax pivotMotor;
+    private final Spark rollerMotor;
+    private final Spark pivotMotor;
 
     public IntakeSubsystem() {
-        rollerMotor = new PWMSparkMax(Constants.IntakeConstants.ROLLER_MOTOR_PWM_PORT);
-        pivotMotor = new PWMSparkMax(Constants.IntakeConstants.PIVOT_MOTOR_PWM_PORT);
+        rollerMotor = new Spark(Constants.IntakeConstants.ROLLER_MOTOR_PWM_PORT);
+        pivotMotor = new Spark(Constants.IntakeConstants.PIVOT_MOTOR_PWM_PORT);
         SmartDashboard.putData(this);
     }
 
