@@ -1,54 +1,81 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.RPM;
+
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import static edu.wpi.first.units.Units.RPM;
-
+import frc.robot.Constants.NeoV1;
 import frc.robot.Ports;
-import frc.robot.Constants;
+import frc.robot.SparkMotor;
 
 public class FeederSubsystem extends SubsystemBase {
     public enum Speed {
-        STOP(0.0),
-        FEED(5000.0 / Constants.NeoV1.kFreeSpeed.in(RPM));
-        
-        private final double percentOutput;
+        FEED(5000.0);
 
-        Speed(double percentOutput) {
-            this.percentOutput = percentOutput;
+        private final double rpm;
+
+        Speed(double rpm) {
+            this.rpm = rpm;
+        }
+
+        public double rpm() {
+            return rpm;
         }
     }
 
-    private final PWMSparkMax motor;
-    private double commandedOutput;
+    private final SparkMotor motor;
+    //private final RelativeEncoder encoder;
+    //private final SparkClosedLoopController closedLoopController;
 
     public FeederSubsystem() {
-        motor = new PWMSparkMax(Ports.kFeederPWM);
-        motor.setInverted(false);
-        motor.setSafetyEnabled(false);
-        commandedOutput = Speed.STOP.percentOutput;
+        motor = new SparkMotor(Ports.kFeeder, MotorType.kBrushless);
+        //encoder = motor.getEncoder();
+        //closedLoopController = motor.getClosedLoopController();
+        
+        final SparkMaxConfig config = new SparkMaxConfig();
+        config
+            .idleMode(IdleMode.kCoast)
+            .inverted(false)
+            .smartCurrentLimit(NeoV1.kSmartCurrentLimitLow)
+            .voltageCompensation(NeoV1.kNominalVoltage);
+        config.closedLoop
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .p(0.0)
+            .i(0.0)
+            .d(0.0);
+        config.closedLoop.feedForward.kV(NeoV1.kNominalVoltage / NeoV1.kFreeSpeed.in(RPM));
+        motor.configureMotor(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        //motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         SmartDashboard.putData(this);
     }
 
     public void set(Speed speed) {
-        setPercentOutput(speed.percentOutput);
+        motor.setRPM(speed);
+        //closedLoopController.setSetpoint(speed.rpm(), ControlType.kVelocity);
     }
 
     public void setPercentOutput(double percentOutput) {
-        commandedOutput = Math.max(-1.0, Math.min(1.0, percentOutput));
-        motor.set(commandedOutput);
+        motor.setPercentOutput(percentOutput);
+        //motor.setVoltage(Volts.of(percentOutput * NeoV1.kNominalVoltage));
     }
 
     public Command feedCommand() {
-        return startEnd(() -> set(Speed.FEED), () -> set(Speed.STOP));
+        return startEnd(() -> set(Speed.FEED), () -> setPercentOutput(0));
     }
 
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addStringProperty("Command", () -> getCurrentCommand() != null ? getCurrentCommand().getName() : "null", null);
-        builder.addDoubleProperty("Output", () -> commandedOutput, null);
+        builder.addDoubleProperty("RPM", motor.getVelocity(), null);
+        builder.addDoubleProperty("Output Current", motor.getOutputCurrent(), null);
+        builder.addDoubleProperty("Applied Voltage", motor::getAppliedVoltageVolts, null);
     }
 }

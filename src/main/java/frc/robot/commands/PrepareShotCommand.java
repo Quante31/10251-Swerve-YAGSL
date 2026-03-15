@@ -2,7 +2,6 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.RPM;
 
 import java.util.function.Supplier;
 
@@ -17,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Landmarks;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.Constants;
 
 public class PrepareShotCommand extends Command {
     private static final InterpolatingTreeMap<Distance, Shot> distanceToShotMap = new InterpolatingTreeMap<>(
@@ -27,16 +25,16 @@ public class PrepareShotCommand extends Command {
         (startValue, endValue, t) ->
             new Shot(
                 Interpolator.forDouble()
-                    .interpolate(startValue.shooterPercentage, endValue.shooterPercentage, t),
+                    .interpolate(startValue.shooterRPM, endValue.shooterRPM, t),
                 Interpolator.forDouble()
                     .interpolate(startValue.hoodPosition, endValue.hoodPosition, t)
             )
     );
 
     static {
-        distanceToShotMap.put(Inches.of(52.0), new Shot(2800.0 / Constants.NeoV1.kFreeSpeed.in(RPM), 0.19));
-        distanceToShotMap.put(Inches.of(114.4), new Shot(3275.0 / Constants.NeoV1.kFreeSpeed.in(RPM), 0.40));
-        distanceToShotMap.put(Inches.of(165.5), new Shot(3650.0 / Constants.NeoV1.kFreeSpeed.in(RPM), 0.48));
+        distanceToShotMap.put(Inches.of(52.0), new Shot(2800, 0.19));
+        distanceToShotMap.put(Inches.of(114.4), new Shot(3275, 0.40));
+        distanceToShotMap.put(Inches.of(165.5), new Shot(3650, 0.48));
     }
 
     private final ShooterSubsystem shooter;
@@ -64,7 +62,7 @@ public class PrepareShotCommand extends Command {
     public void execute() {
         final Distance distanceToHub = getDistanceToHub();
         final Shot shot = distanceToShotMap.get(distanceToHub);
-        shooter.setPercentOutput(shot.shooterPercentage);
+        shooter.setRPM(shot.shooterRPM);
         hood.setPosition(shot.hoodPosition);
         SmartDashboard.putNumber("Distance to Hub (inches)", distanceToHub.in(Inches));
     }
@@ -80,11 +78,11 @@ public class PrepareShotCommand extends Command {
     }
 
     public static class Shot {
-        public final double shooterPercentage;
+        public final double shooterRPM;
         public final double hoodPosition;
 
-        public Shot(double shooterPercentage, double hoodPosition) {
-            this.shooterPercentage = shooterPercentage;
+        public Shot(double shooterRPM, double hoodPosition) {
+            this.shooterRPM = shooterRPM;
             this.hoodPosition = hoodPosition;
         }
     }

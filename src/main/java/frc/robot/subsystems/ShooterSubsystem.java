@@ -1,49 +1,40 @@
 package frc.robot.subsystems;
 
-/*import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-*/
+
 import java.util.List;
 
-//import edu.wpi.first.units.measure.AngularVelocity;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.SparkBase.ControlType;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.math.filter.Debouncer;
-//import com.revrobotics.spark.SparkMax;
-//import com.revrobotics.spark.SparkLowLevel.MotorType;
+import frc.robot.Constants.NeoV1;
 import frc.robot.Ports;
+import frc.robot.SparkMotor;
+import frc.robot.util.SparkSetpointUtil;
 
 public class ShooterSubsystem extends SubsystemBase {
-    //private static final AngularVelocity kVelocityTolerance = RPM.of(100);
-    private static final double kSpinupSec = 0.70; // tune on robot
-    private static final double kMinShootPercent = 0.05;
-    private double commandedPercent = 0.0;
+    private static final double kVelocityToleranceRpm = 100.0;
+    private final SparkMotor leftMotor, middleMotor, rightMotor;
+    private final List<SparkMotor> motors;
+
     private double dashboardTargetRPM = 0.0;
 
-    private final PWMSparkMax leftMotor, middleMotor, rightMotor;
-    private final List<PWMSparkMax> motors;
-    private final Timer spinupTimer = new Timer();
-    private final Debouncer readyDebounce = new Debouncer(0.05);
-
-    //private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
-    //private final VoltageOut voltageRequest = new VoltageOut(0);
-    
-
     public ShooterSubsystem() {
-        //SparkMax testMotor = new SparkMax(1, MotorType.kBrushless);
-        //testMotor.getAbsoluteEncoder().getVelocity();
-        leftMotor = new PWMSparkMax(Ports.kShooterLeftPWM);
-        middleMotor = new PWMSparkMax(Ports.kShooterMiddlePWM);
-        rightMotor = new PWMSparkMax(Ports.kShooterRightPWM);
+        leftMotor = new SparkMotor(Ports.kShooterLeft, MotorType.kBrushless);
+        middleMotor = new SparkMotor(Ports.kShooterMiddle, MotorType.kBrushless);
+        rightMotor = new SparkMotor(Ports.kShooterRight, MotorType.kBrushless);
         motors = List.of(leftMotor, middleMotor, rightMotor);
 
+        // Original Talon setup had opposite inversion on left vs middle/right.
         configureMotor(leftMotor, true);
         configureMotor(middleMotor, false);
         configureMotor(rightMotor, false);
@@ -51,31 +42,35 @@ public class ShooterSubsystem extends SubsystemBase {
         SmartDashboard.putData(this);
     }
 
-    private void configureMotor(PWMSparkMax motor, boolean inverted) {
-        motor.setInverted(inverted);
-        motor.setSafetyEnabled(false);
+    private void configureMotor(SparkMotor motor, boolean invertDirection) {
+        final SparkMaxConfig config = new SparkMaxConfig();
+        config
+            .idleMode(IdleMode.kCoast)
+            .inverted(invertDirection)
+            .smartCurrentLimit(NeoV1.kSmartCurrentLimitHigh)
+            .voltageCompensation(NeoV1.kNominalVoltage);
+        config.closedLoop
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .outputRange(0.0, 1.0)
+            .p(0.00025)
+            .i(0.0)
+            .d(0.0);
+        config.closedLoop.feedForward.kV(NeoV1.kNominalVoltage / NeoV1.kFreeSpeed.in(RPM));
+
+        motor.configureMotor(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     }
 
-    /*public void setRPM(double rpm) {
-        for (final TalonFX motor : motors) {
-            motor.setControl(
-                velocityRequest
-                    .withVelocity(RPM.of(rpm))
-            );
+    public void setRPM(double rpm) {
+        for (final SparkMotor motor : motors) {
+            motor.setRPM(rpm);
+            motor.setSetpoint(rpm, ControlType.kVelocity);
         }
-    }*/
+    }
 
     public void setPercentOutput(double percentOutput) {
-        commandedPercent = percentOutput;
-        for (final PWMSparkMax motor : motors) {
-            motor.set(commandedPercent);
-        }
-
-        if (Math.abs(commandedPercent) > kMinShootPercent) {
-            spinupTimer.restart();
-        } else {
-            spinupTimer.stop();
-            spinupTimer.reset();
+        for (final SparkMotor motor : motors) {
+            motor.setPercentOutput(percentOutput);
+            motor.setSetpoint(percentOutput, ControlType.kVoltage);
         }
     }
 
@@ -83,10 +78,9 @@ public class ShooterSubsystem extends SubsystemBase {
         setPercentOutput(0.0);
     }
 
-    public Command spinUpCommand(double percentOutput) {
-        /*return runOnce(() -> setPercentOutput(percentOutput))
-            .andThen(Commands.waitUntil(this::isVelocityWithinTolerance));*/
-        return Commands.sequence(runOnce(() -> setPercentOutput(percentOutput)), Commands.waitSeconds(kSpinupSec)).withTimeout(kSpinupSec + 0.15);
+    public Command spinUpCommand(double rpm) {
+        return runOnce(() -> setRPM(rpm))
+            .andThen(Commands.waitUntil(this::isVelocityWithinTolerance));
     }
 
     public Command dashboardSpinUpCommand() {
@@ -94,23 +88,20 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public boolean isVelocityWithinTolerance() {
-        // TODO Improve
-        boolean readyEstimate = Math.abs(commandedPercent) > kMinShootPercent && spinupTimer.hasElapsed(kSpinupSec);
-        return readyDebounce.calculate(readyEstimate);
-
-        /*return motors.stream().allMatch(motor -> {
-            final boolean isInVelocityMode = motor.getAppliedControl().equals(velocityRequest);
-            final AngularVelocity currentVelocity = motor.getVelocity().getValue();
-            final AngularVelocity targetVelocity = velocityRequest.getVelocityMeasure();
-            return isInVelocityMode && currentVelocity.isNear(targetVelocity, kVelocityTolerance);
-        });*/
+        return motors.stream().allMatch(motor -> {
+            SparkMotor.Setpoint setpoint = motor.getSetpoint();
+            return setpoint != null && (Math.abs(motor.getVelocityRPM() - SparkSetpointUtil.toVelocityRpm(setpoint)) <= kVelocityToleranceRpm);
+        });
     }
 
-    private void initSendable(SendableBuilder builder, PWMSparkMax motor, String name) {
-        builder.addDoubleProperty(name + " Output PWM", () -> motor.get(), null);
-        /*builder.addDoubleProperty(name + " RPM", () -> motor.getVelocity().getValue().in(RPM), null);
-        builder.addDoubleProperty(name + " Stator Current", () -> motor.getStatorCurrent().getValue().in(Amps), null);
-        builder.addDoubleProperty(name + " Supply Current", () -> motor.getSupplyCurrent().getValue().in(Amps), null);*/
+    private void initSendable(SendableBuilder builder, SparkMotor motor, String name) {
+        builder.addDoubleProperty(name + " RPM", motor::getVelocityRPM, null);
+        builder.addDoubleProperty(name + " Output Current", motor::getOutputCurrentAmps, null);
+        builder.addDoubleProperty(name + " Applied Voltage", motor::getAppliedVoltageVolts, null);
+        builder.addDoubleProperty(name + "Target RPM", () -> motor.getSetpoint().getValue(), null);
+
+        //builder.addIntegerProperty(name + "Velocity Mode", motor.getControlMode(), null);
+
     }
 
     @Override
@@ -119,7 +110,6 @@ public class ShooterSubsystem extends SubsystemBase {
         initSendable(builder, middleMotor, "Middle");
         initSendable(builder, rightMotor, "Right");
         builder.addStringProperty("Command", () -> getCurrentCommand() != null ? getCurrentCommand().getName() : "null", null);
-        /*builder.addDoubleProperty("Dashboard RPM", () -> dashboardTargetRPM, value -> dashboardTargetRPM = value);
-        builder.addDoubleProperty("Target RPM", () -> velocityRequest.getVelocityMeasure().in(RPM), null);*/
+        builder.addDoubleProperty("Dashboard RPM", () -> dashboardTargetRPM, value -> dashboardTargetRPM = value);
     }
 }

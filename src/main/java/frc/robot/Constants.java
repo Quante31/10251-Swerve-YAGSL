@@ -50,7 +50,10 @@ public final class Constants
     public static final double RIGHT_X_DEADBAND = 0.1;
     public static final double TURN_CONSTANT    = 6;
   }
-   public static class NeoV1 {
-        public static final AngularVelocity kFreeSpeed = RPM.of(5676);
-    }
+  public static class NeoV1 {
+    public static final AngularVelocity kFreeSpeed = RPM.of(5676);
+    public static final double kNominalVoltage = 12.0;
+    public static final int kSmartCurrentLimitLow = 50;
+    public static final int kSmartCurrentLimitHigh = 60;
+  }
 }
