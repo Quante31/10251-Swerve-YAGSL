@@ -1,13 +1,12 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.SparkMotor;
 
 /*
  * intake mechanism, consisting of a roller motor and a pivot motor.
@@ -28,12 +27,12 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
 
-    private final  SparkMax rollerMotor;
-    private final  SparkMax pivotMotor;
+    private final SparkMotor rollerMotor;
+    private final SparkMotor pivotMotor;
 
     public IntakeSubsystem() {
-        rollerMotor = new  SparkMax(Constants.IntakeConstants.ROLLER_MOTOR_CAN_ID, MotorType.kBrushless);
-        pivotMotor = new  SparkMax(Constants.IntakeConstants.PIVOT_MOTOR_CAN_ID, MotorType.kBrushless);
+    rollerMotor = new SparkMotor(Constants.IntakeConstants.ROLLER_MOTOR_CAN_ID, MotorType.kBrushless);
+    pivotMotor = new SparkMotor(Constants.IntakeConstants.PIVOT_MOTOR_CAN_ID, MotorType.kBrushless);
 
     }
 
@@ -45,7 +44,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     /** Run the roller at a given percent (-1..1) */
     public void setRoller(double speed) {
-        rollerMotor.set(speed);
+        rollerMotor.setPercentOutput(speed);
     }
 
     /** Run using preset Speed enum */
@@ -58,23 +57,23 @@ public class IntakeSubsystem extends SubsystemBase {
      *  This method is intentionally simple — stopPivot() or retract() must be called to stop/retract.
      */
     public void extend() {
-        pivotMotor.set(Constants.IntakeConstants.EXTEND_SPEED);
+        pivotMotor.setPercentOutput(Constants.IntakeConstants.EXTEND_SPEED);
     }
 
     /** Retract the intake pivot (open-loop). */
     public void retract() {
-        pivotMotor.set(Constants.IntakeConstants.RETRACT_SPEED);
+        pivotMotor.setPercentOutput(Constants.IntakeConstants.RETRACT_SPEED);
     }
 
     /** Stop pivot motor movement */
     public void stopPivot() {
-        pivotMotor.set(0);
+        pivotMotor.setPercentOutput(0);
     }
 
     /** Toggle the intake roller: if running stop, otherwise start at INTAKE speed */
     /** Toggle the roller motor: if running stop, otherwise start at INTAKE speed */
     public void toggle() {
-        if (Math.abs(rollerMotor.get()) > 1e-6) {
+        if (Math.abs(rollerMotor.getAppliedOutput().getAsDouble()) > 1e-6) {
             stop();
         } else {
             set(Speed.INTAKE);
@@ -84,8 +83,8 @@ public class IntakeSubsystem extends SubsystemBase {
     /** Stop the roller */
     /** Stop both roller and pivot motors */
     public void stop() {
-        rollerMotor.set(0);
-        pivotMotor.set(0);
+        rollerMotor.setPercentOutput(0);
+        pivotMotor.setPercentOutput(0);
     }
 
     /** Command that runs intake while active, stops on end */
@@ -101,8 +100,8 @@ public class IntakeSubsystem extends SubsystemBase {
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addStringProperty("Command", () -> getCurrentCommand() != null ? getCurrentCommand().getName() : "null", null);
-        builder.addDoubleProperty("Roller Output", () -> rollerMotor.get(), null);
-        builder.addDoubleProperty("Pivot Output", () -> pivotMotor.get(), null);
+        builder.addDoubleProperty("Roller Output", () -> rollerMotor.getAppliedOutput().getAsDouble(), null);
+        builder.addDoubleProperty("Pivot Output", () -> pivotMotor.getAppliedOutput().getAsDouble(), null);
     }
 }
  
