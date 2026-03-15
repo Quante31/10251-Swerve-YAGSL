@@ -67,4 +67,9 @@ public final class Constants
     // Default intake (roller) motor speed for simple commands
     public static final double INTAKE_DEFAULT_SPEED = 0.6;
   }
+
+  public static final class NeoV1 {
+  
+  }
+
 }
