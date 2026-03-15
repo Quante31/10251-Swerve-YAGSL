@@ -80,16 +80,7 @@ public class SparkMotor {
         this.setSetpoint(speed.rpm(), ControlType.kVelocity);
 
     }
-    /**
-     * Convenience velocity command using the double rpm value.
-     *
-     * @param speed in double RPM
-     */
-    public void setRPM(double rpm) {
-        closedLoopController.setSetpoint(rpm, ControlType.kVelocity);
-        this.setSetpoint(rpm, ControlType.kVelocity);
 
-    }
     /**
      * Open-loop voltage command from normalized percent output.
      *
