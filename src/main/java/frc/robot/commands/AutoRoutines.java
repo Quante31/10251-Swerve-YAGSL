@@ -1,0 +1,137 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.commands;
+
+import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$0;
+import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$1;
+import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$2;
+import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$3;
+
+import choreo.auto.AutoChooser;
+import choreo.auto.AutoFactory;
+import choreo.auto.AutoRoutine;
+import choreo.auto.AutoTrajectory;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.generated.ChoreoVars;
+import frc.robot.subsystems.FeederSubsystem;
+import frc.robot.subsystems.FloorSubsystem;
+//import frc.robot.subsystems.Hanger;
+//import frc.robot.subsystems.HoodSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
+//import frc.robot.subsystems.Limelight;
+import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.swervedrive.SwerveSubsystem;
+
+public final class AutoRoutines {
+    private final SwerveSubsystem swerve;
+    private final IntakeSubsystem intake;
+    private final FloorSubsystem floor;
+    private final FeederSubsystem feeder;
+    private final ShooterSubsystem shooter;
+    //private final HoodSubsystem hood;
+    //private final Hanger hanger;
+    //private final Limelight limelight;
+
+    private final SubsystemCommands subsystemCommands;
+
+    private final AutoFactory autoFactory;
+    private final AutoChooser autoChooser;
+
+    public AutoRoutines(
+        SwerveSubsystem swerve,
+        IntakeSubsystem intake,
+        FloorSubsystem floor,
+        FeederSubsystem feeder,
+        ShooterSubsystem shooter
+        //HoodSubsystem hood
+        //Hanger hanger,
+        //Limelight limelight
+    ) {
+        this.swerve = swerve;
+        this.intake = intake;
+        this.floor = floor;
+        this.feeder = feeder;
+        this.shooter = shooter;
+        //this.hood = hood;
+        //this.hanger = hanger;
+        //this.limelight = limelight;
+
+        this.subsystemCommands = new SubsystemCommands(swerve, intake, floor, feeder, shooter/* hood, hanger*/);
+
+        this.autoFactory = swerve.createAutoFactory();
+        this.autoChooser = new AutoChooser();
+    }
+
+    public void configure() {
+        autoChooser.addRoutine("Outpost and Depot", this::outpostAndDepotRoutine);
+        SmartDashboard.putData("Auto Chooser", autoChooser);
+        RobotModeTriggers.autonomous().whileTrue(autoChooser.selectedCommandScheduler());
+    }
+
+    private AutoRoutine outpostAndDepotRoutine() {
+        final AutoRoutine routine = autoFactory.newRoutine("Outpost and Depot");
+
+        final AutoTrajectory startToOutpost = OutpostAndDepotTraj$0.asAutoTraj(routine);
+        final AutoTrajectory outpostToDepot = OutpostAndDepotTraj$1.asAutoTraj(routine);
+        final AutoTrajectory depotToShootingPose = OutpostAndDepotTraj$2.asAutoTraj(routine);
+        final AutoTrajectory shootingPoseToTower = OutpostAndDepotTraj$3.asAutoTraj(routine);
+
+        // Start first trajectory
+        routine.active().onTrue(
+            Commands.sequence(
+                startToOutpost.resetOdometry(),
+                startToOutpost.cmd()
+            )
+        );
+        // Check until the hanger is homed, then open the intake
+        /*routine.observe(hanger::isHomed).onTrue(
+            Commands.sequence(
+                Commands.waitSeconds(0.5),
+                intake.runOnce(() -> intake.set(Intake.Position.INTAKE))
+            )
+        );*/
+        outpostToDepot.atTimeBeforeEnd(1.5).onTrue(
+            Commands.sequence(
+                Commands.waitSeconds(0.5),
+                intake.runOnce(() -> intake.set(Intake.Position.INTAKE))
+            )
+        );
+        // 1 second after the trajectory finishes enable next trajectory
+        startToOutpost.doneDelayed(1).onTrue(outpostToDepot.cmd());
+
+        // 1 second before the trajectory ends enable intake
+        outpostToDepot.atTimeBeforeEnd(1).onTrue(intake.intakeCommand());
+
+        // 0.1 seconds after the trajectory finishes enable next trajectory
+        outpostToDepot.doneDelayed(0.1).onTrue(depotToShootingPose.cmd());
+
+        // 0.5 seconds after the trajectory starts spin up the shooter and position the hood
+        //depotToShootingPose.active().whileTrue(limelight.idle());
+        depotToShootingPose.atTime(0.5).onTrue(shooter.spinUpCommand(2800 /*TODO Calibrate */));
+        /*depotToShootingPose.atTime(0.5).onTrue(
+            Commands.parallel(
+                shooter.spinUpCommand(2600),
+                hood.positionCommand(0.32)
+            )
+        ); */
+        // after the trajectory finishes, aim, shoot and enable next trajectory
+        depotToShootingPose.done().onTrue(
+            Commands.sequence(
+                subsystemCommands.aimAndShoot()
+                    .withTimeout(5),
+                shootingPoseToTower.cmd()
+            )
+        );
+
+        //shootingPoseToTower.active().whileTrue(limelight.idle());
+        // after the trajectory starts, set position hanger
+        //shootingPoseToTower.active().onTrue(hanger.positionCommand(Hanger.Position.HANGING));
+        //shootingPoseToTower.done().onTrue(hanger.positionCommand(Hanger.Position.HUNG));
+
+        return routine;
+    }
+}

@@ -31,7 +31,7 @@ public class HoodSubsystem extends SubsystemBase {
     private double currentPosition = 0.5;
     private double targetPosition = 0.5;
     private Time lastUpdateTime = Seconds.of(0);
-
+    
     public HoodSubsystem() {
         leftServo = new Servo(Ports.kHoodLeftServo);
         rightServo = new Servo(Ports.kHoodRightServo);

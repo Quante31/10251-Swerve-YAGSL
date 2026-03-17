@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -44,7 +45,7 @@ public class Robot extends TimedRobot
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
-
+    SmartDashboard.putData(CommandScheduler.getInstance());
     // Create a timer to disable motor brake a few seconds after disable.  This will let the robot stop
     // immediately when disabled, but then also let it be pushed more 
     disabledTimer = new Timer();
@@ -97,7 +98,7 @@ public class Robot extends TimedRobot
   /**
    * This autonomous runs the autonomous command selected by your {@link RobotContainer} class.
    */
-  @Override
+  /*@Override
   public void autonomousInit()
   {
     m_robotContainer.setMotorBrake(true);
@@ -112,16 +113,16 @@ public class Robot extends TimedRobot
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
   }
-
+  */
   /**
    * This function is called periodically during autonomous.
    */
-  @Override
+  /*@Override
   public void autonomousPeriodic()
   {
-  }
+  }*/
 
-  @Override
+  /*@Override
   public void teleopInit()
   {
     // This makes sure that the autonomous stops running when
@@ -135,7 +136,7 @@ public class Robot extends TimedRobot
     {
       CommandScheduler.getInstance().cancelAll();
     }
-  }
+  }*/
 
   /**
    * This function is called periodically during operator control.
@@ -149,7 +150,7 @@ public class Robot extends TimedRobot
   public void testInit()
   {
     // Cancels all running commands at the start of test mode.
-    CommandScheduler.getInstance().cancelAll();
+    // CommandScheduler.getInstance().cancelAll();
   }
 
   /**

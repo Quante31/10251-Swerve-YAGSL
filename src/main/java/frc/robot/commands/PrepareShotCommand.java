@@ -14,7 +14,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Landmarks;
-import frc.robot.subsystems.HoodSubsystem;
+//import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 
 public class PrepareShotCommand extends Command {
@@ -38,18 +38,18 @@ public class PrepareShotCommand extends Command {
     }
 
     private final ShooterSubsystem shooter;
-    private final HoodSubsystem hood;
+    //private final HoodSubsystem hood;
     private final Supplier<Pose2d> robotPoseSupplier;
 
-    public PrepareShotCommand(ShooterSubsystem shooter, HoodSubsystem hood, Supplier<Pose2d> robotPoseSupplier) {
+    public PrepareShotCommand(ShooterSubsystem shooter, /*HoodSubsystem hood,*/ Supplier<Pose2d> robotPoseSupplier) {
         this.shooter = shooter;
-        this.hood = hood;
+        //this.hood = hood;
         this.robotPoseSupplier = robotPoseSupplier;
-        addRequirements(shooter, hood);
+        addRequirements(shooter/*, hood*/);
     }
 
     public boolean isReadyToShoot() {
-        return shooter.isVelocityWithinTolerance() && hood.isPositionWithinTolerance();
+        return shooter.isVelocityWithinTolerance(); //&& hood.isPositionWithinTolerance();
     }
 
     private Distance getDistanceToHub() {
@@ -63,7 +63,7 @@ public class PrepareShotCommand extends Command {
         final Distance distanceToHub = getDistanceToHub();
         final Shot shot = distanceToShotMap.get(distanceToHub);
         shooter.setRPM(shot.shooterRPM);
-        hood.setPosition(shot.hoodPosition);
+        //hood.setPosition(shot.hoodPosition);
         SmartDashboard.putNumber("Distance to Hub (inches)", distanceToHub.in(Inches));
     }
 

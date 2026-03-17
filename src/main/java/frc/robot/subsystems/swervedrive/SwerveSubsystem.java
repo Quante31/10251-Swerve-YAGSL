@@ -6,6 +6,10 @@ package frc.robot.subsystems.swervedrive;
 
 import static edu.wpi.first.units.Units.Meter;
 
+import choreo.Choreo.TrajectoryLogger;
+import choreo.auto.AutoFactory;
+import choreo.trajectory.SwerveSample;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,21 +39,31 @@ import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class SwerveSubsystem extends SubsystemBase
 {
+  //private static final double CHOREO_TRANSLATION_KP = 5.0;
+  //private static final double CHOREO_HEADING_KP = 5.0;
+
   /**
    * Swerve drive object.
    */
   private final SwerveDrive swerveDrive;
+
+  private final PIDController pathXController = new PIDController(10, 0, 0);
+  private final PIDController pathYController = new PIDController(10, 0, 0);
+  private final PIDController pathThetaController = new PIDController(7, 0, 0);
+  /*private final PIDController choreoXController = new PIDController(CHOREO_TRANSLATION_KP, 0.0, 0.0);
+  private final PIDController choreoYController = new PIDController(CHOREO_TRANSLATION_KP, 0.0, 0.0);
+  private final PIDController choreoHeadingController = new PIDController(CHOREO_HEADING_KP, 0.0, 0.0);*/
 
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
    *
    * @param directory Directory of swerve drive config files.
    */
-   public SwerveSubsystem(File directory)
+  public SwerveSubsystem(File directory)
   { 
     boolean blueAlliance = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Blue;
-    Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0))
-                                       : new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)), Rotation2d.fromDegrees(180));
+    Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(3.598), Meter.of(0.6398)), Rotation2d.fromDegrees(0))
+                                       : new Pose2d(new Translation2d(Meter.of(12.942), Meter.of(0.6398)), Rotation2d.fromDegrees(180));
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
@@ -69,6 +83,7 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.setModuleEncoderAutoSynchronize(false,
                                                 1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
     // swerveDrive.pushOffsetsToEncoders(); // Set the absolute encoder to be used over the internal encoder and push the offsets onto it. Throws warning if not possible
+    //choreoHeadingController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -84,6 +99,7 @@ public class SwerveSubsystem extends SubsystemBase
                                   Constants.MAX_SPEED,
                                   new Pose2d(new Translation2d(Meter.of(2), Meter.of(0)),
                                              Rotation2d.fromDegrees(0)));
+    //choreoHeadingController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   @Override
@@ -283,7 +299,32 @@ public class SwerveSubsystem extends SubsystemBase
   {
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
+  /**
+   * Creates a new auto factory for this drivetrain.
+   *
+   * @return AutoFactory for this drivetrain
+   */
+  public AutoFactory createAutoFactory() {
+      return createAutoFactory((sample, isStart) -> {});
+  }
 
+  /**
+   * Creates a new auto factory for this drivetrain with the given
+   * trajectory logger.
+   *
+   * @param trajLogger Logger for the trajectory
+   * @return AutoFactory for this drivetrain
+   */
+  public AutoFactory createAutoFactory(TrajectoryLogger<SwerveSample> trajLogger) {
+    return new AutoFactory(
+          this::getPose,
+          this::resetOdometry,
+          this::followPath,
+          true,
+          this,
+          trajLogger
+      );
+  }
   /**
    * Gets the current pose (position and rotation) of the robot, as reported by odometry.
    *
@@ -304,6 +345,34 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.setChassisSpeeds(chassisSpeeds);
   }
 
+/**
+   * Follows the given field-centric path sample with PID.
+   *
+   * @param sample Sample along the path to follow
+   */
+  public void followPath(SwerveSample sample) {
+      pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
+
+      Pose2d pose = getPose();
+
+      ChassisSpeeds targetSpeeds = sample.getChassisSpeeds();
+      targetSpeeds.vxMetersPerSecond += pathXController.calculate(
+          pose.getX(), sample.x
+      );
+      targetSpeeds.vyMetersPerSecond += pathYController.calculate(
+          pose.getY(), sample.y
+      );
+      targetSpeeds.omegaRadiansPerSecond += pathThetaController.calculate(
+          pose.getRotation().getRadians(), sample.heading
+      );
+      driveFieldOriented(targetSpeeds);
+
+      /*setControl(
+          pathFieldSpeedsRequest.withSpeeds(targetSpeeds)
+              .withWheelForceFeedforwardsX(sample.moduleForcesX())
+              .withWheelForceFeedforwardsY(sample.moduleForcesY())
+      );*/
+  }
   /**
    * Post the trajectory to the field.
    *
