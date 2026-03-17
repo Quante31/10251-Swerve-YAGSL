@@ -97,7 +97,7 @@ public final class AutoRoutines {
         outpostToDepot.atTimeBeforeEnd(1.5).onTrue(
             Commands.sequence(
                 Commands.waitSeconds(0.5),
-                intake.runOnce(() -> intake.set(Intake.Position.INTAKE))
+                intake.runOnce(() -> intake.set(IntakeSubsystem.Position.INTAKE))
             )
         );
         // 1 second after the trajectory finishes enable next trajectory

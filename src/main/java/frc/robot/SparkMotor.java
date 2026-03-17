@@ -151,6 +151,13 @@ public class SparkMotor {
     }
 
     /**
+     * @return supplier for relative encoder position in position units (rotations by default)
+     */
+    public DoubleSupplier getPosition(){
+        return encoder::getPosition;
+    }
+
+    /**
      * @return supplier for applied output in normalized units ({@code -1.0} to {@code 1.0})
      */
     public DoubleSupplier getAppliedOutput(){

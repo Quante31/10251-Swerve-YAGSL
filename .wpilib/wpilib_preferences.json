@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
     "enableCppIntellisense": false,
     "currentLanguage": "java",
     "projectYear": "2026",
     "teamNumber": 10251
 }
+=======
+  "team": 10251
+}
+>>>>>>> origin/intake-subsystem
