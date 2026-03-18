@@ -4,6 +4,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.Constants.NeoV1;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.FloorSubsystem;
 //import frc.robot.subsystems.HoodSubsystem;
@@ -64,7 +65,21 @@ public final class SubsystemCommands {
                 .andThen(feed())
         );
     }
-
+    public Command testCommand() {
+        return Commands.parallel(
+            Commands.run(() -> feeder.set(FeederSubsystem.Speed.TEST)),
+            Commands.waitSeconds(3),
+            Commands.run(() -> feeder.setPercentOutput(0)),
+            Commands.waitSeconds(1),
+            Commands.run(() -> floor.set(FloorSubsystem.Speed.TEST)),
+            Commands.waitSeconds(3),
+            Commands.run(() -> floor.set(FloorSubsystem.Speed.STOP)),
+            Commands.waitSeconds(1),
+            shooter.spinUpCommand(100),
+            Commands.waitSeconds(3),
+            Commands.run(() -> shooter.setPercentOutput(0))
+        );
+    }
     public Command shootManually() {
         return shooter.dashboardSpinUpCommand()
             .andThen(feed())

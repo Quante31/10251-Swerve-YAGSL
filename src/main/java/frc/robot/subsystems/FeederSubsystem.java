@@ -18,8 +18,8 @@ import frc.robot.SparkMotor;
 
 public class FeederSubsystem extends SubsystemBase {
     public enum Speed {
-        FEED(5000.0);
-
+        FEED(5000.0),
+        TEST(500.0);
         private final double rpm;
 
         Speed(double rpm) {

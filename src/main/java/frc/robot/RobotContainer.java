@@ -164,28 +164,19 @@ public class RobotContainer
 
 
     }
-    if (DriverStation.isTest()) {
-      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overrides drive command above!
+    RobotModeTriggers.test().onTrue(subsystemCommands.testCommand());
+    RobotModeTriggers.autonomous().or(RobotModeTriggers.teleop())
+        .onTrue(intake.homingCommand());
+    
+    driverXbox.rightTrigger().whileTrue(subsystemCommands.aimAndShoot());
+    driverXbox.rightBumper().whileTrue(subsystemCommands.shootManually());
+    driverXbox.leftTrigger().whileTrue(intake.intakeCommand());
+    driverXbox.leftBumper().onTrue(intake.runOnce(() -> intake.set(IntakeSubsystem.Position.STOWED)));
 
-      driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.back().whileTrue(drivebase.centerModulesCommand());
-      driverXbox.leftBumper().onTrue(Commands.none());
-      driverXbox.rightBumper().onTrue(Commands.none());
-    } 
-    else {
-      /*RobotModeTriggers.autonomous().or(RobotModeTriggers.teleop())
-          .onTrue(intake.homingCommand());*/
-
-      driverXbox.rightTrigger().whileTrue(subsystemCommands.aimAndShoot());
-      driverXbox.rightBumper().whileTrue(subsystemCommands.shootManually());
-      driverXbox.leftTrigger().whileTrue(intake.intakeCommand());
-      driverXbox.leftBumper().onTrue(intake.runOnce(() -> intake.set(IntakeSubsystem.Position.STOWED)));
-
-      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.start().whileTrue(Commands.none());
-      driverXbox.back().whileTrue(Commands.none());
-    }
+    driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+    driverXbox.start().whileTrue(Commands.none());
+    driverXbox.back().whileTrue(Commands.none());
+    
   }
 
   /**

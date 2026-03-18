@@ -35,7 +35,8 @@ public class ShooterSubsystem extends SubsystemBase {
         motors = List.of(leftMotor, middleMotor, rightMotor);
 
         // Original Talon setup had opposite inversion on left vs middle/right.
-        configureMotor(leftMotor, true);
+        configureMotor(leftMotor, false
+        );
         configureMotor(middleMotor, false);
         configureMotor(rightMotor, false);
 

@@ -20,8 +20,8 @@ import frc.robot.SparkMotor;
 public class FloorSubsystem extends SubsystemBase {
     public enum Speed {
         STOP(0),
-        FEED(0.83);
-
+        FEED(0.83),
+        TEST(0.2);
         private final double percentOutput;
 
         private Speed(double percentOutput) {
