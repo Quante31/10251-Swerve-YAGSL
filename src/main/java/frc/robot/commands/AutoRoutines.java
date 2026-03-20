@@ -9,6 +9,14 @@ import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$1;
 import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$2;
 import static frc.robot.generated.ChoreoTraj.OutpostAndDepotTraj$3;
 
+import static frc.robot.generated.ChoreoTraj.StartToBump;
+import static frc.robot.generated.ChoreoTraj.BumpToBump2;
+import static frc.robot.generated.ChoreoTraj.Bump2ToIntake;
+import static frc.robot.generated.ChoreoTraj.IntakeToBump2;
+import static frc.robot.generated.ChoreoTraj.Bump2ToBump;
+import static frc.robot.generated.ChoreoTraj.BumpToShootingPose;
+import static frc.robot.generated.ChoreoTraj.ShootingPoseToOutpost;
+
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
@@ -132,6 +140,40 @@ public final class AutoRoutines {
         //shootingPoseToTower.active().onTrue(hanger.positionCommand(Hanger.Position.HANGING));
         //shootingPoseToTower.done().onTrue(hanger.positionCommand(Hanger.Position.HUNG));
 
+        return routine;
+    }
+    private AutoRoutine intakeShootAndReturn() {
+        final AutoRoutine routine = autoFactory.newRoutine("Intake Shoot and Return");
+
+        final AutoTrajectory startToBump = StartToBump.asAutoTraj(routine);
+        final AutoTrajectory bumpToBump2 = BumpToBump2.asAutoTraj(routine);
+        final AutoTrajectory bump2ToIntake = Bump2ToIntake.asAutoTraj(routine);
+        final AutoTrajectory intakeToBump2 = IntakeToBump2.asAutoTraj(routine);
+        final AutoTrajectory bump2ToBump = Bump2ToBump.asAutoTraj(routine);
+        final AutoTrajectory bumpToShootingPose = BumpToShootingPose.asAutoTraj(routine);
+        final AutoTrajectory shootingPoseToOutpost = ShootingPoseToOutpost.asAutoTraj(routine);
+        // Start first trajectory
+        routine.active().onTrue(
+            Commands.sequence(
+                startToBump.resetOdometry(),
+                startToBump.cmd()
+            )
+        );
+        startToBump.doneDelayed(0.2).onTrue(bumpToBump2.cmd());
+        bumpToBump2.doneDelayed(0.2).onTrue(bump2ToIntake.cmd());
+        bump2ToIntake.atTimeBeforeEnd(1).onTrue(intake.intakeCommand());
+        bump2ToIntake.doneDelayed(1).onTrue(intakeToBump2.cmd());
+        intakeToBump2.doneDelayed(0.2).onTrue(bump2ToBump.cmd());
+        bump2ToBump.doneDelayed(0.1).onTrue(bumpToShootingPose.cmd());
+        bumpToShootingPose.atTime(0.5).onTrue(shooter.spinUpCommand(5200 /*8TODO Calibrate */));
+        bumpToShootingPose.done().onTrue(
+            Commands.sequence(
+                subsystemCommands.aimAndShoot()
+                    .withTimeout(5),
+                shootingPoseToOutpost.cmd()
+            )
+        );
+        
         return routine;
     }
 }

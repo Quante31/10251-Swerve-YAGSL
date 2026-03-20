@@ -132,13 +132,13 @@ public class RobotContainer
     Command driveFieldOrientedAnglularVelocityKeyboard = drivebase.driveFieldOriented(driveAngularVelocityKeyboard);
 
 
-    if (RobotBase.isSimulation())
+    /*if (RobotBase.isSimulation())
     {
       drivebase.setDefaultCommand(driveFieldOrientedDirectAngleKeyboard);
     } else
-    {
-      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
-    }
+    {*/
+    drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
+    //}
 
     if (Robot.isSimulation())
     {
@@ -165,15 +165,18 @@ public class RobotContainer
 
     }
     RobotModeTriggers.test().onTrue(subsystemCommands.testCommand());
-    RobotModeTriggers.autonomous().or(RobotModeTriggers.teleop())
-        .onTrue(intake.homingCommand());
+    //RobotModeTriggers.autonomous().or(RobotModeTriggers.teleop())
+    //    .onTrue(intake.homingCommand());
     
     driverXbox.rightTrigger().whileTrue(subsystemCommands.aimAndShoot());
     driverXbox.rightBumper().whileTrue(subsystemCommands.shootManually());
     driverXbox.leftTrigger().whileTrue(intake.intakeCommand());
     driverXbox.leftBumper().onTrue(intake.runOnce(() -> intake.set(IntakeSubsystem.Position.STOWED)));
-
     driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+    driverXbox.x().whileTrue(Commands.runOnce(() -> intake.set(IntakeSubsystem.Speed.TEST))).onFalse(Commands.runOnce(() -> intake.set(IntakeSubsystem.Speed.STOP)));
+    driverXbox.b().whileTrue(Commands.runOnce(() -> feeder.set(FeederSubsystem.Speed.TEST))).onFalse(Commands.runOnce(() -> feeder.set(FeederSubsystem.Speed.STOP)));
+    driverXbox.y().whileTrue(Commands.runOnce(() -> floor.set(FloorSubsystem.Speed.TEST))).onFalse(Commands.runOnce(() -> floor.set(FloorSubsystem.Speed.STOP)));
+
     driverXbox.start().whileTrue(Commands.none());
     driverXbox.back().whileTrue(Commands.none());
     

@@ -92,7 +92,7 @@ public final class SubsystemCommands {
             Commands.parallel(
                 feeder.feedCommand(),
                 Commands.waitSeconds(0.125)
-                    .andThen(floor.feedCommand().alongWith(intake.agitateCommand()))
+                    .andThen(floor.feedCommand()/* .alongWith(intake.agitateCommand()) */)
             )
         );
     }

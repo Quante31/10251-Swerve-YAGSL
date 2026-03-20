@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
@@ -35,7 +37,7 @@ public class IntakeSubsystem extends SubsystemBase {
     public enum Speed {
         STOP(0.0),
         INTAKE(0.8),
-        TEST(0.2);
+        TEST(0.45);
         private final double percentOutput;
 
         private Speed(double percentOutput) {
@@ -47,24 +49,28 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
     public enum Position {
-        HOMED(110),
-        STOWED(100),
-        INTAKE(-4),
-        AGITATE(20);
+        HOMED(0.35),
+        STOWED(0.3),
+        INTAKE(-0.018),
+        AGITATE(0.05);
+       // HOMED((3.1415 / 180) * 110),
+       // STOWED((3.1415 / 180) * 100),
+       // INTAKE((3.1415 / 180) * -4),
+       // AGITATE((3.1415 / 180) * 20);
 
-        private final double degrees;
+        private final double position;
 
-        private Position(double degrees) {
-            this.degrees = degrees;
+        private Position(double position) {
+            this.position = position;
         }
 
-        public Angle angle() {
-            return Degrees.of(degrees);
+        public double position() {
+            return this.position;
         }
     }
-    private static final double kPivotReduction = 50.0;
+    private static final double kPivotReduction = 4.0;
     private static final AngularVelocity kMaxPivotSpeed = NeoV1.kFreeSpeed.div(kPivotReduction);
-    private static final Angle kPositionTolerance = Degrees.of(5);
+    private static final double kPositionTolerance = 0.0250;
     private final SparkMotor rollerMotor;
     private final SparkMotor pivotMotor;
     private boolean isHomed = false;
@@ -89,13 +95,13 @@ public class IntakeSubsystem extends SubsystemBase {
         config.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .outputRange(-1.0, 1.0)
-            .p(1.0)
+            .p(0.01)
             .i(0.0)
             .d(0.0);
         config.closedLoop.feedForward.kV(NeoV1.kNominalVoltage / kMaxPivotSpeed.in(RPM));
         config.closedLoop.maxMotion
-            .cruiseVelocity(kMaxPivotSpeed.in(RPM))
-            .maxAcceleration(kMaxPivotSpeed.per(Second).in(RPM.per(Second)));
+            .cruiseVelocity(120/*kMaxPivotSpeed.in(RPM)*/)
+            .maxAcceleration(40/*kMaxPivotSpeed.per(Second).in(RPM.per(Second))*/);
 
         pivotMotor.configureMotor(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         /*final TalonFXConfiguration config = new TalonFXConfiguration()
@@ -135,7 +141,7 @@ public class IntakeSubsystem extends SubsystemBase {
         final SparkMaxConfig config = new SparkMaxConfig();
         config
             .idleMode(IdleMode.kBrake)
-            .inverted(false)
+            .inverted(true)
             .smartCurrentLimit(NeoV1.kSmartCurrentLimitHigh)
             .voltageCompensation(NeoV1.kNominalVoltage);
         config.closedLoop
@@ -160,10 +166,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
 
     private boolean isPositionWithinTolerance() {
+        final double position = pivotMotor.getMAXMotionSetpointPosition();
         final SparkMotor.Setpoint setpoint = pivotMotor.getSetpoint();
-        return setpoint != null
-            && setpoint.getControlType() == ControlType.kMAXMotionPositionControl
-            && Math.abs(pivotMotor.getPosition().getAsDouble() - setpoint.getValue()) <= kPositionTolerance.in(Degrees);
+
+        return setpoint != null && setpoint.getControlType() == ControlType.kMAXMotionPositionControl && Math.abs(pivotMotor.getPosition().getAsDouble() - position) <= kPositionTolerance;
     }
 
     private void setPivotPercentOutput(double percentOutput) {
@@ -171,25 +177,24 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public void set(Position position) {
-        pivotMotor.set(position.angle().in(Degrees), ControlType.kMAXMotionPositionControl);
+        pivotMotor.set(position.position(), ControlType.kMAXMotionPositionControl);
     }
-
+    public void setVoltage(double setpoint){
+        pivotMotor.set(setpoint, ControlType.kVoltage);
+    }
     public void set(Speed speed) {
         rollerMotor.set(speed.voltage().in(Volts), ControlType.kVoltage);
     }
 
     public Command intakeCommand() {
-        return startEnd(
-            () -> {
-                set(Position.INTAKE);
-                set(Speed.INTAKE);
-            },
-            () -> set(Speed.STOP)
-        );
+        return Commands.sequence(Commands.runOnce(() -> setVoltage(-6.0)), 
+                Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh), 
+                Commands.runOnce(() -> setVoltage(0.0)))
+                .andThen(Commands.startEnd(() -> set(Speed.TEST), () -> set(Speed.STOP)));
     }
 
     public Command agitateCommand() {
-        return runOnce(() -> set(Speed.INTAKE))
+        return runOnce(() -> set(Speed.TEST))
             .andThen(
                 Commands.sequence(
                     runOnce(() -> set(Position.AGITATE)),
@@ -210,7 +215,7 @@ public class IntakeSubsystem extends SubsystemBase {
             runOnce(() -> setPivotPercentOutput(0.1)),
             Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > 6),
             runOnce(() -> {
-                pivotMotor.set(Position.HOMED.angle().in(Degrees), ControlType.kMAXMotionPositionControl);
+                pivotMotor.set(Position.HOMED.position(), ControlType.kMAXMotionPositionControl);
                 isHomed = true;
                 set(Position.STOWED);
             })
@@ -223,11 +228,13 @@ public class IntakeSubsystem extends SubsystemBase {
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addStringProperty("Command", () -> getCurrentCommand() != null ? getCurrentCommand().getName() : "null", null);
-        builder.addDoubleProperty("Angle (degrees)",
+        builder.addDoubleProperty("Position",
             () -> (pivotMotor.getPosition().getAsDouble()), null);
-        builder.addDoubleProperty("RPM", rollerMotor::getVelocityRPM, null);
-        builder.addDoubleProperty("Pivot Output Current", pivotMotor::getOutputCurrentAmps, null);
-        builder.addDoubleProperty("Roller Output Current", rollerMotor::getOutputCurrentAmps, null);
+        builder.addDoubleProperty("Velocity (RPM)", rollerMotor::getVelocityRPM, null);
+        //builder.addDoubleProperty("Pivot setpoint position", pivotMotor::getMAXMotionSetpointPosition, null);
+        //builder.addDoubleProperty("Roller setpoint velocity", rollerMotor::getMAXMotionSetpointVelocity, null);
+        //builder.addDoubleProperty("Pivot Output Current", pivotMotor::getOutputCurrentAmps, null);
+        //builder.addDoubleProperty("Roller Output Current", rollerMotor::getOutputCurrentAmps, null);
     }
 }
  

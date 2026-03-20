@@ -57,7 +57,7 @@ public class SparkMotor {
         this.motor = new SparkMax(deviceId, type);
         this.encoder = motor.getEncoder();
         this.closedLoopController = motor.getClosedLoopController();
-        this.setpoint = null;
+        this.setpoint = new Setpoint(0.0, ControlType.kDutyCycle);
     }
     /**
      * Sends a closed-loop setpoint using the requested control type.
@@ -194,6 +194,13 @@ public class SparkMotor {
 
     public Setpoint getSetpoint() {
         return this.setpoint;
+    }
+    public double getMAXMotionSetpointPosition(){
+
+        return closedLoopController.getMAXMotionSetpointPosition();
+    }
+    public double getMAXMotionSetpointVelocity(){
+        return closedLoopController.getMAXMotionSetpointVelocity();
     }
     
 }

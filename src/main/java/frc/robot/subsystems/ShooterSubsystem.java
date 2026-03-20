@@ -26,7 +26,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final SparkMotor leftMotor, middleMotor, rightMotor;
     private final List<SparkMotor> motors;
 
-    private double dashboardTargetRPM = 0.0;
+    private double dashboardTargetRPM = 5200.0;
 
     public ShooterSubsystem() {
         leftMotor = new SparkMotor(Ports.kShooterLeft, MotorType.kBrushless);
@@ -35,10 +35,10 @@ public class ShooterSubsystem extends SubsystemBase {
         motors = List.of(leftMotor, middleMotor, rightMotor);
 
         // Original Talon setup had opposite inversion on left vs middle/right.
-        configureMotor(leftMotor, false
+        configureMotor(leftMotor, true
         );
-        configureMotor(middleMotor, false);
-        configureMotor(rightMotor, false);
+        configureMotor(middleMotor, true);
+        configureMotor(rightMotor, true);
 
         SmartDashboard.putData(this);
     }
@@ -67,19 +67,36 @@ public class ShooterSubsystem extends SubsystemBase {
             motor.setSetpoint(rpm, ControlType.kVelocity);
         }
     }
-
+    public void setRPMLeftRight(double rpm) {
+        leftMotor.setRPM(rpm);
+        leftMotor.setSetpoint(rpm, ControlType.kVelocity);
+        rightMotor.setRPM(rpm);
+        rightMotor.setSetpoint(rpm, ControlType.kVelocity);
+    }
+    public void setRPMMiddle(double rpm) {
+        middleMotor.setRPM(rpm);
+        middleMotor.setSetpoint(rpm, ControlType.kVelocity);     
+    }
     public void setPercentOutput(double percentOutput) {
         for (final SparkMotor motor : motors) {
             motor.setPercentOutput(percentOutput);
             motor.setSetpoint(percentOutput, ControlType.kVoltage);
         }
     }
-
+    public void setPercentOutputLeftRight(double percentOutput) {
+        leftMotor.setPercentOutput(percentOutput);
+        leftMotor.setSetpoint(percentOutput, ControlType.kVoltage);
+        rightMotor.setPercentOutput(percentOutput);
+        rightMotor.setSetpoint(percentOutput, ControlType.kVoltage);
+    }
     public void stop() {
         setPercentOutput(0.0);
     }
 
     public Command spinUpCommand(double rpm) {
+        //return runOnce(() -> setRPMLeftRight(rpm)).alongWith(Commands.runOnce(() -> setRPMMiddle(rpm - 3000)))
+        //    .andThen(Commands.waitUntil(this::isVelocityWithinTolerance));
+
         return runOnce(() -> setRPM(rpm))
             .andThen(Commands.waitUntil(this::isVelocityWithinTolerance));
     }
@@ -98,8 +115,8 @@ public class ShooterSubsystem extends SubsystemBase {
     private void initSendable(SendableBuilder builder, SparkMotor motor, String name) {
         builder.addDoubleProperty(name + " RPM", motor::getVelocityRPM, null);
         builder.addDoubleProperty(name + " Output Current", motor::getOutputCurrentAmps, null);
-        builder.addDoubleProperty(name + " Applied Voltage", motor::getAppliedVoltageVolts, null);
-        builder.addDoubleProperty(name + "Target RPM", () -> motor.getSetpoint().getValue(), null);
+        //builder.addDoubleProperty(name + " Applied Voltage", motor::getAppliedVoltageVolts, null);
+        //builder.addDoubleProperty(name + "Target RPM", () -> motor.getSetpoint().getValue(), null);
 
         //builder.addIntegerProperty(name + "Velocity Mode", motor.getControlMode(), null);
 
