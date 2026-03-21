@@ -87,9 +87,9 @@ public record ChoreoTraj(
     public static final ChoreoTraj ShootingPoseToOutpost = new ChoreoTraj(
         "ShootingPoseToOutpost",
         OptionalInt.empty(),
-        1.75098,
+        1.75102,
         new Pose2d(1.6, 1.6, Rotation2d.fromRadians(0.6737)),
-        new Pose2d(0.581, 0.669, Rotation2d.fromRadians(3.14159))
+        new Pose2d(0.531, 0.669, Rotation2d.fromRadians(3.14159))
     );
     public static final ChoreoTraj BumpToBump2 = new ChoreoTraj(
         "BumpToBump2",
