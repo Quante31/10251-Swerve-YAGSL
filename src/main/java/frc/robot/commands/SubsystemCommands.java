@@ -63,7 +63,7 @@ public final class SubsystemCommands {
                 .andThen(prepareShotCommand),
             Commands.waitUntil(() -> aimAndDriveCommand.isAimed() && prepareShotCommand.isReadyToShoot())
                 .andThen(feed())
-        );
+        ).withName("Aim And Shoot Command");
     }
     public Command testCommand() {
         return Commands.parallel(
@@ -78,12 +78,12 @@ public final class SubsystemCommands {
             shooter.spinUpCommand(100),
             Commands.waitSeconds(3),
             Commands.run(() -> shooter.setPercentOutput(0))
-        );
+        ).withName("Test Command");
     }
     public Command shootManually() {
         return shooter.dashboardSpinUpCommand()
             .andThen(feed())
-            .handleInterrupt(() -> shooter.stop());
+            .handleInterrupt(() -> shooter.stop()).withName("Shoot Manually Command");
     }
 
     private Command feed() {
@@ -94,6 +94,6 @@ public final class SubsystemCommands {
                 Commands.waitSeconds(0.125)
                     .andThen(floor.feedCommand()/* .alongWith(intake.agitateCommand()) */)
             )
-        );
+        ).withName("Feed Command");
     }
 }

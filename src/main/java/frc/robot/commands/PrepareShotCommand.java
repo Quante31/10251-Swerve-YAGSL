@@ -18,6 +18,7 @@ import frc.robot.Landmarks;
 import frc.robot.subsystems.ShooterSubsystem;
 
 public class PrepareShotCommand extends Command {
+    private static final double rpmRatio = 1.4;
     private static final InterpolatingTreeMap<Distance, Shot> distanceToShotMap = new InterpolatingTreeMap<>(
         (startValue, endValue, q) -> 
             InverseInterpolator.forDouble()
@@ -32,9 +33,9 @@ public class PrepareShotCommand extends Command {
     );
 
     static {
-        distanceToShotMap.put(Inches.of(52.0), new Shot(2800, 0.19));
-        distanceToShotMap.put(Inches.of(114.4), new Shot(3275, 0.40));
-        distanceToShotMap.put(Inches.of(165.5), new Shot(3650, 0.48));
+        distanceToShotMap.put(Inches.of(52.0), new Shot(2800 * rpmRatio, 0.19));
+        distanceToShotMap.put(Inches.of(114.4), new Shot(3275 * rpmRatio, 0.40));
+        distanceToShotMap.put(Inches.of(165.5), new Shot(3650 * rpmRatio, 0.48));
     }
 
     private final ShooterSubsystem shooter;

@@ -148,7 +148,7 @@ public class IntakeSubsystem extends SubsystemBase {
                         (Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh).withTimeout(2)),
                         runOnce(() -> set(Speed.TEST)))
                         )
-                .finallyDo(() -> {setVoltage(0.0); set(Speed.STOP);});
+                .finallyDo(() -> {setVoltage(0.0); set(Speed.STOP);}).withName("Intake Command");
         /*return Commands.sequence(Commands.runOnce(() -> setVoltage(-6.0)), 
                 Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh), 
                 Commands.runOnce(() -> setVoltage(0.0)))
@@ -169,7 +169,7 @@ public class IntakeSubsystem extends SubsystemBase {
             .handleInterrupt(() -> {
                 set(Position.INTAKE);
                 set(Speed.STOP);
-            });
+            }).withName("Intake Agitate Command");
     }
 
     public Command homingCommand() {
@@ -183,7 +183,7 @@ public class IntakeSubsystem extends SubsystemBase {
             })
         )
         .unless(() -> isHomed)
-        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
+        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming).withName("Intake Homing Command");
     }
 
 

@@ -105,7 +105,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public Command dashboardSpinUpCommand() {
-        return defer(() -> spinUpCommand(dashboardTargetRPM)); 
+        return defer(() -> spinUpCommand(dashboardTargetRPM)).withName("Dashboard Spin Up Command"); 
     }
 
     public boolean isVelocityWithinTolerance() {
