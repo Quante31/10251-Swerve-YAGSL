@@ -104,37 +104,6 @@ public class IntakeSubsystem extends SubsystemBase {
             .maxAcceleration(40/*kMaxPivotSpeed.per(Second).in(RPM.per(Second))*/);
 
         pivotMotor.configureMotor(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        /*final TalonFXConfiguration config = new TalonFXConfiguration()
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withInverted(InvertedValue.CounterClockwise_Positive)
-                    .withNeutralMode(NeutralModeValue.Brake)
-            )
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(120))
-                    .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(Amps.of(70))
-                    .withSupplyCurrentLimitEnable(true)
-            )
-            .withFeedback(
-                new FeedbackConfigs()
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                    .withSensorToMechanismRatio(kPivotReduction)
-            )
-            .withMotionMagic(
-                new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(kMaxPivotSpeed)
-                    .withMotionMagicAcceleration(kMaxPivotSpeed.per(Second))
-            )
-            .withSlot0(
-                new Slot0Configs()
-                    .withKP(300)
-                    .withKI(0)
-                    .withKD(0)
-                    .withKV(12.0 / kMaxPivotSpeed.in(RotationsPerSecond)) // 12 volts when requesting max RPS
-            );
-        pivotMotor.getConfigurator().apply(config);*/
     }
 
     private void configureRollerMotor() {
@@ -148,20 +117,6 @@ public class IntakeSubsystem extends SubsystemBase {
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
         config.closedLoop.feedForward.kV(NeoV1.kNominalVoltage / NeoV1.kFreeSpeed.in(RPM));
         rollerMotor.configureMotor(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        /*final TalonFXConfiguration config = new TalonFXConfiguration()
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withInverted(InvertedValue.Clockwise_Positive)
-                    .withNeutralMode(NeutralModeValue.Brake)
-            )
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(120))
-                    .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(Amps.of(70))
-                    .withSupplyCurrentLimitEnable(true)
-            );
-        rollerMotor.getConfigurator().apply(config);*/
     }
 
 
@@ -179,18 +134,25 @@ public class IntakeSubsystem extends SubsystemBase {
     public void set(Position position) {
         pivotMotor.set(position.position(), ControlType.kMAXMotionPositionControl);
     }
-    public void setVoltage(double setpoint){
-        pivotMotor.set(setpoint, ControlType.kVoltage);
+    public void setVoltage(double voltage){
+        pivotMotor.set(voltage, ControlType.kVoltage);
     }
     public void set(Speed speed) {
         rollerMotor.set(speed.voltage().in(Volts), ControlType.kVoltage);
     }
 
     public Command intakeCommand() {
-        return Commands.sequence(Commands.runOnce(() -> setVoltage(-6.0)), 
+        return runOnce(() -> setVoltage(-6.0))
+                .andThen(
+                    Commands.sequence(
+                        (Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh).withTimeout(2)),
+                        runOnce(() -> set(Speed.TEST)))
+                        )
+                .finallyDo(() -> {setVoltage(0.0); set(Speed.STOP);});
+        /*return Commands.sequence(Commands.runOnce(() -> setVoltage(-6.0)), 
                 Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh), 
                 Commands.runOnce(() -> setVoltage(0.0)))
-                .andThen(Commands.startEnd(() -> set(Speed.TEST), () -> set(Speed.STOP)));
+                .andThen(Commands.startEnd(() -> set(Speed.TEST), () -> set(Speed.STOP)));*/
     }
 
     public Command agitateCommand() {

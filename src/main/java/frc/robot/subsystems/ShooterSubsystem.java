@@ -12,6 +12,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkBase.ControlType;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -96,7 +97,9 @@ public class ShooterSubsystem extends SubsystemBase {
     public Command spinUpCommand(double rpm) {
         //return runOnce(() -> setRPMLeftRight(rpm)).alongWith(Commands.runOnce(() -> setRPMMiddle(rpm - 3000)))
         //    .andThen(Commands.waitUntil(this::isVelocityWithinTolerance));
-
+        if (RobotBase.isSimulation()){
+            return runOnce(() -> setRPM(rpm));
+        }
         return runOnce(() -> setRPM(rpm))
             .andThen(Commands.waitUntil(this::isVelocityWithinTolerance));
     }

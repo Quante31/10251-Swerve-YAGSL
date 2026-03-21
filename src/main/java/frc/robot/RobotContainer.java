@@ -66,8 +66,6 @@ public class RobotContainer
       () -> driverXbox.getLeftY() * -1,
       () -> driverXbox.getLeftX() * -1
   );
-  // Establish a Sendable Chooser that will be able to be sent to the SmartDashboard, allowing selection of desired auto
-  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
   /**
    * Converts driver input into a field-relative ChassisSpeeds that is controlled by angular velocity.
    */
@@ -78,7 +76,6 @@ public class RobotContainer
                                                             .deadband(OperatorConstants.DEADBAND)
                                                             .scaleTranslation(0.8)
                                                             .allianceRelativeControl(true);
-
   /**
    * Clone's the angular velocity input stream and converts it to a fieldRelative input stream.
    */
@@ -131,14 +128,13 @@ public class RobotContainer
     Command driveFieldOrientedDirectAngleKeyboard      = drivebase.driveFieldOriented(driveDirectAngleKeyboard);
     Command driveFieldOrientedAnglularVelocityKeyboard = drivebase.driveFieldOriented(driveAngularVelocityKeyboard);
 
-
-    /*if (RobotBase.isSimulation())
-    {
-      drivebase.setDefaultCommand(driveFieldOrientedDirectAngleKeyboard);
-    } else
-    {*/
-    drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
-    //}
+    if (RobotBase.isSimulation()){
+      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
+      //drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocitySim);
+    }
+    else{
+      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
+    }
 
     if (Robot.isSimulation())
     {
@@ -165,8 +161,6 @@ public class RobotContainer
 
     }
     RobotModeTriggers.test().onTrue(subsystemCommands.testCommand());
-    //RobotModeTriggers.autonomous().or(RobotModeTriggers.teleop())
-    //    .onTrue(intake.homingCommand());
     
     driverXbox.rightTrigger().whileTrue(subsystemCommands.aimAndShoot());
     driverXbox.rightBumper().whileTrue(subsystemCommands.shootManually());
@@ -181,17 +175,6 @@ public class RobotContainer
     driverXbox.back().whileTrue(Commands.none());
     
   }
-
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
-  /*public Command getAutonomousCommand()
-  {
-    // Pass in the selected auto from the SmartDashboard as our desired autnomous commmand 
-    return autoChooser.getSelected();
-  }*/
 
   public void setMotorBrake(boolean brake)
   {

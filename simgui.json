@@ -1,0 +1,88 @@
+{
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Alerts": "Alerts",
+      "/SmartDashboard/Auto Chooser": "String Chooser",
+      "/SmartDashboard/Choreo Alerts": "Alerts",
+      "/SmartDashboard/Encoders": "Alerts",
+      "/SmartDashboard/Field": "Field2d",
+      "/SmartDashboard/IMU": "Alerts",
+      "/SmartDashboard/JSON": "Alerts",
+      "/SmartDashboard/Motors": "Alerts",
+      "/SmartDashboard/Scheduler": "Scheduler",
+      "/SmartDashboard/Swerve Drive": "Alerts"
+    },
+    "windows": {
+      "/SmartDashboard/Auto Chooser": {
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Field": {
+        "OdometryPose": {
+          "arrowColor": [
+            0.05100401118397713,
+            0.11731467396020889,
+            0.8356807231903076,
+            255.0
+          ],
+          "arrowSize": 68,
+          "color": [
+            0.6478872299194336,
+            0.0,
+            1.0,
+            255.0
+          ],
+          "style": "Line"
+        },
+        "Robot": {
+          "arrowSize": 34,
+          "style": "Box/Image",
+          "width": 0.6859999895095825
+        },
+        "XModules": {
+          "arrowColor": [
+            255.0,
+            208.30987548828125,
+            0.0,
+            255.0
+          ],
+          "arrowSize": 22,
+          "arrowWeight": 2.0,
+          "style": "Hidden",
+          "weight": 3.0,
+          "width": 0.6859999895095825
+        },
+        "bottom": 1914,
+        "height": 8.069275856018066,
+        "left": 245,
+        "right": 3942,
+        "top": 118,
+        "width": 16.54119300842285,
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Scheduler": {
+        "window": {
+          "visible": true
+        }
+      }
+    }
+  },
+  "NetworkTables": {
+    "Persistent Values": {
+      "open": false
+    },
+    "Retained Values": {
+      "open": false
+    }
+  },
+  "NetworkTables Info": {
+    "visible": true
+  },
+  "NetworkTables View": {
+    "visible": false
+  }
+}

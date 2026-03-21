@@ -27,10 +27,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.ChoreoVars;
 import frc.robot.subsystems.FeederSubsystem;
 import frc.robot.subsystems.FloorSubsystem;
-//import frc.robot.subsystems.Hanger;
-//import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
-//import frc.robot.subsystems.Limelight;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 
@@ -40,9 +37,6 @@ public final class AutoRoutines {
     private final FloorSubsystem floor;
     private final FeederSubsystem feeder;
     private final ShooterSubsystem shooter;
-    //private final HoodSubsystem hood;
-    //private final Hanger hanger;
-    //private final Limelight limelight;
 
     private final SubsystemCommands subsystemCommands;
 
@@ -55,18 +49,13 @@ public final class AutoRoutines {
         FloorSubsystem floor,
         FeederSubsystem feeder,
         ShooterSubsystem shooter
-        //HoodSubsystem hood
-        //Hanger hanger,
-        //Limelight limelight
     ) {
         this.swerve = swerve;
         this.intake = intake;
         this.floor = floor;
         this.feeder = feeder;
         this.shooter = shooter;
-        //this.hood = hood;
-        //this.hanger = hanger;
-        //this.limelight = limelight;
+
 
         this.subsystemCommands = new SubsystemCommands(swerve, intake, floor, feeder, shooter/* hood, hanger*/);
 
@@ -76,6 +65,7 @@ public final class AutoRoutines {
 
     public void configure() {
         autoChooser.addRoutine("Outpost and Depot", this::outpostAndDepotRoutine);
+        autoChooser.addRoutine("Intake Shoot and Return", this::intakeShootAndReturn);
         SmartDashboard.putData("Auto Chooser", autoChooser);
         RobotModeTriggers.autonomous().whileTrue(autoChooser.selectedCommandScheduler());
     }
@@ -118,14 +108,8 @@ public final class AutoRoutines {
         outpostToDepot.doneDelayed(0.1).onTrue(depotToShootingPose.cmd());
 
         // 0.5 seconds after the trajectory starts spin up the shooter and position the hood
-        //depotToShootingPose.active().whileTrue(limelight.idle());
-        depotToShootingPose.atTime(0.5).onTrue(shooter.spinUpCommand(2800 /*TODO Calibrate */));
-        /*depotToShootingPose.atTime(0.5).onTrue(
-            Commands.parallel(
-                shooter.spinUpCommand(2600),
-                hood.positionCommand(0.32)
-            )
-        ); */
+        depotToShootingPose.atTime(0.5).onTrue(shooter.spinUpCommand(2800));
+
         // after the trajectory finishes, aim, shoot and enable next trajectory
         depotToShootingPose.done().onTrue(
             Commands.sequence(
@@ -134,11 +118,6 @@ public final class AutoRoutines {
                 shootingPoseToTower.cmd()
             )
         );
-
-        //shootingPoseToTower.active().whileTrue(limelight.idle());
-        // after the trajectory starts, set position hanger
-        //shootingPoseToTower.active().onTrue(hanger.positionCommand(Hanger.Position.HANGING));
-        //shootingPoseToTower.done().onTrue(hanger.positionCommand(Hanger.Position.HUNG));
 
         return routine;
     }
