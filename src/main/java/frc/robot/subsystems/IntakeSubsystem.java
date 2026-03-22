@@ -21,6 +21,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -141,22 +142,21 @@ public class IntakeSubsystem extends SubsystemBase {
         rollerMotor.set(speed.voltage().in(Volts), ControlType.kVoltage);
     }
 
-    public Command intakeCommand() {
+    public Command intakeCommand() { 
+        return intakeOpenCommand().andThen(intakeRollCommand());
+    }
+    public Command intakeOpenCommand(){
         // TODO Change Commands.waitUntil to position check
         return runOnce(() -> setVoltage(-6.0))
-                .andThen(
-                    Commands.sequence(
-                        (Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh).withTimeout(2)),
-                        runOnce(() -> set(Speed.TEST)))
-                        )
-                .andThen(Commands.waitSeconds(2))
-                .finallyDo(() -> {setVoltage(0.0); set(Speed.STOP);}).withName("Intake Command");
-        /*return Commands.sequence(Commands.runOnce(() -> setVoltage(-6.0)), 
-                Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh), 
-                Commands.runOnce(() -> setVoltage(0.0)))
-                .andThen(Commands.startEnd(() -> set(Speed.TEST), () -> set(Speed.STOP)));*/
+               .andThen(Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh).withTimeout(2))
+               .finallyDo(() -> setVoltage(0.0)).withName("Intake Open Command");
     }
-
+    public Command intakeRollCommand(){
+        return startEnd(() -> set(Speed.TEST), () -> set(Speed.STOP)).withName("Intake Roll Command");
+    }
+    public Command intakeStopCommand(){
+        return runOnce(() -> setVoltage(0.0)).andThen(runOnce(() -> set(Speed.STOP)));
+    }
     public Command agitateCommand() {
         return runOnce(() -> set(Speed.TEST))
             .andThen(

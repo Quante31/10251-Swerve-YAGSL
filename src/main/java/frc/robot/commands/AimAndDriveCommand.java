@@ -22,13 +22,13 @@ public class AimAndDriveCommand extends Command {
     private final DriveInputSmoother inputSmoother;
 
     // Last commanded target direction in field frame.
-    private final Translation2d hubPosition;
+    //private final Translation2d hubPosition;
     private Rotation2d targetDirection;
 
     public AimAndDriveCommand(SwerveSubsystem swerve, DoubleSupplier forwardInput, DoubleSupplier leftInput) {
         this.swerve = swerve;
         this.inputSmoother = new DriveInputSmoother(forwardInput, leftInput);
-        this.hubPosition = Landmarks.hubPosition();
+        //this.hubPosition = Landmarks.hubPosition();
         this.targetDirection = getDirectionToHub();
         addRequirements(swerve);
     }
@@ -43,8 +43,8 @@ public class AimAndDriveCommand extends Command {
     }
 
     private Rotation2d getDirectionToHub() {
-       
         final Translation2d robotPosition = swerve.getPose().getTranslation();
+        final Translation2d hubPosition = Landmarks.hubPosition();
         return hubPosition.minus(robotPosition).getAngle();
     }
 

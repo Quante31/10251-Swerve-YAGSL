@@ -2,3 +2,6 @@ build/
 .gradle/
 .gradle-local/
 bin/
+simgui-ds.json
+simgui-window.json
+simgui.json
