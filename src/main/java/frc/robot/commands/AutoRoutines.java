@@ -140,8 +140,8 @@ public final class AutoRoutines {
         );
         startToBump.doneDelayed(0.2).onTrue(bumpToBump2.cmd());
         bumpToBump2.doneDelayed(0.2).onTrue(bump2ToIntake.cmd());
-        bump2ToIntake.atTimeBeforeEnd(1).onTrue(intake.intakeCommand());
-        bump2ToIntake.doneDelayed(1).onTrue(intakeToBump2.cmd());
+        bump2ToIntake.atTimeBeforeEnd(0.5).onTrue(intake.intakeCommand());
+        bump2ToIntake.doneDelayed(0.5).onTrue(intakeToBump2.cmd());
         intakeToBump2.doneDelayed(0.2).onTrue(bump2ToBump.cmd());
         bump2ToBump.doneDelayed(0.1).onTrue(bumpToShootingPose.cmd());
         bumpToShootingPose.atTime(0.5).onTrue(shooter.spinUpCommand(5200 /*8TODO Calibrate */));

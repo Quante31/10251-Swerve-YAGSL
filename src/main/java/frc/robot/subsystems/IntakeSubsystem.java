@@ -142,12 +142,14 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public Command intakeCommand() {
+        // TODO Change Commands.waitUntil to position check
         return runOnce(() -> setVoltage(-6.0))
                 .andThen(
                     Commands.sequence(
                         (Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh).withTimeout(2)),
                         runOnce(() -> set(Speed.TEST)))
                         )
+                .andThen(Commands.waitSeconds(2))
                 .finallyDo(() -> {setVoltage(0.0); set(Speed.STOP);}).withName("Intake Command");
         /*return Commands.sequence(Commands.runOnce(() -> setVoltage(-6.0)), 
                 Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh), 
