@@ -91,7 +91,7 @@ public class IntakeSubsystem extends SubsystemBase {
         config
             .idleMode(IdleMode.kBrake)
             .inverted(false)
-            .smartCurrentLimit(NeoV1.kSmartCurrentLimitHigh)
+            .smartCurrentLimit(70)
             .voltageCompensation(NeoV1.kNominalVoltage);
         config.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
@@ -147,8 +147,8 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     public Command intakeOpenCommand(){
         // TODO Change Commands.waitUntil to position check
-        return runOnce(() -> setVoltage(-6.0))
-               .andThen(Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() > NeoV1.kSmartCurrentLimitHigh).withTimeout(2))
+        return runOnce(() -> setVoltage(-8.0))
+               .andThen(Commands.waitUntil(() -> pivotMotor.getOutputCurrentAmps() >100).withTimeout(2))
                .finallyDo(() -> setVoltage(0.0)).withName("Intake Open Command");
     }
     public Command intakeRollCommand(){
