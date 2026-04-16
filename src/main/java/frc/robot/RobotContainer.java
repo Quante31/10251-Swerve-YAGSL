@@ -63,8 +63,8 @@ public class RobotContainer
       feeder,
       shooter,
       //hood,
-      () -> driverXbox.getLeftY() * -1,
-      () -> driverXbox.getLeftX() * -1
+      () -> driverXbox.getLeftY(),
+      () -> driverXbox.getLeftX()
   );
   // Establish a Sendable Chooser that will be able to be sent to the SmartDashboard, allowing selection of desired auto
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
